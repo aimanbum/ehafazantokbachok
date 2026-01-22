@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Semakan Hafazan | SMKA Tok Bachok</title>
+    <title>Sistem Semakan Prestasi Hafazan | SMKA Tok Bachok</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-color: #004d00; 
-            --accent-color: #D4AF37; /* Gold */
+            --accent-color: #D4AF37; 
             --bg-light: #f8faf9;
             --white: #ffffff;
         }
@@ -18,10 +18,10 @@
             background-color: var(--bg-light);
             margin: 0;
             color: #333;
-            /* Corak Islamik Halus di Background */
             background-image: url('https://www.transparenttextures.com/patterns/islamic-art.png');
         }
 
+        /* Navigasi & Header */
         .navbar {
             background: var(--white);
             padding: 15px 0;
@@ -43,16 +43,10 @@
             text-align: center;
         }
 
-        .hero-section h1 {
-            margin: 0;
-            font-size: 22px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
+        /* Bekas Utama */
         .container {
             width: 95%;
-            max-width: 480px;
+            max-width: 500px;
             margin: -40px auto 40px auto;
             background: var(--white);
             border-radius: 15px;
@@ -61,125 +55,62 @@
             box-sizing: border-box;
         }
 
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #555;
-            text-align: left;
-        }
-
+        .input-group { margin-bottom: 20px; }
+        label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #555; text-align: left; }
+        
         input[type="text"] {
-            width: 100%;
-            padding: 14px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            box-sizing: border-box;
-            transition: 0.3s;
-            background: #fdfdfd;
-        }
-
-        input[type="text"]:focus {
-            border-color: var(--primary-color);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(0,77,0,0.1);
+            width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;
+            box-sizing: border-box; transition: 0.3s; background: #fdfdfd; text-align: center;
         }
 
         .btn-check {
-            width: 100%;
-            background: var(--primary-color);
-            color: white;
-            padding: 15px;
-            border: none;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.3s;
-            text-transform: uppercase;
+            width: 100%; background: var(--primary-color); color: white; padding: 15px;
+            border: none; border-radius: 8px; font-size: 15px; font-weight: 700;
+            cursor: pointer; transition: 0.3s; text-transform: uppercase;
         }
 
-        .btn-check:hover {
-            background: #003300;
-            transform: translateY(-1px);
-        }
-
+        /* Kad Keputusan */
         .result-card {
-            display: none;
-            margin-top: 25px;
-            border: 1px solid #e0e0e0;
-            border-radius: 12px;
-            overflow: hidden;
-            animation: fadeIn 0.4s ease;
+            display: none; margin-top: 25px; border: 2px solid var(--accent-color);
+            border-radius: 12px; overflow: hidden; animation: fadeIn 0.4s ease; background: white;
         }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .result-header {
-            background: #f1f8f1;
-            padding: 15px;
-            border-bottom: 2px solid var(--accent-color);
-            text-align: center;
-        }
+        .result-header { background: #f1f8f1; padding: 20px; text-align: center; border-bottom: 1px solid #ddd; }
+        .result-header h2 { margin: 10px 0 0 0; font-size: 18px; color: var(--primary-color); text-transform: uppercase; }
 
-        .result-header h2 {
-            margin: 0;
-            font-size: 18px;
-            color: var(--primary-color);
-        }
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table td { padding: 12px 20px; font-size: 14px; border-bottom: 1px solid #eee; }
+        .label-col { color: #666; font-weight: 600; width: 45%; text-align: left; }
+        .val-col { text-align: right; font-weight: 700; color: #000; }
 
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .data-table tr {
-            border-bottom: 1px solid #eee;
-        }
-
-        .data-table td {
-            padding: 12px 15px;
-            font-size: 14px;
-        }
-
-        .label-col {
-            color: #777;
-            font-weight: 600;
-            width: 40%;
-        }
-
-        .val-col {
-            text-align: right;
-            font-weight: 700;
-            color: #222;
-        }
-
-        .footer {
-            text-align: center;
-            padding: 20px;
-            font-size: 11px;
-            color: #888;
-            line-height: 1.6;
+        .btn-print {
+            width: 100%; background: #555; color: white; padding: 12px; margin-top: 15px;
+            border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
         }
 
         .loading-spinner {
-            display: none;
-            margin: 20px auto;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--primary-color);
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
+            display: none; margin: 20px auto; border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color); border-radius: 50%;
+            width: 30px; height: 30px; animation: spin 1s linear infinite;
         }
 
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* KOD KHAS UNTUK CETAK (PRINT) */
+        @media print {
+            body { background: white; background-image: none; }
+            .navbar, .hero-section, .input-group, .btn-check, .btn-print, .footer { display: none !important; }
+            .container { box-shadow: none; margin: 0; width: 100%; max-width: 100%; padding: 0; }
+            .result-card { display: block !important; border: 2px solid #000; margin-top: 0; }
+            .result-header::before {
+                content: url('logo.png');
+                display: block;
+                width: 80px;
+                margin: 0 auto 10px auto;
+            }
+        }
     </style>
 </head>
 <body>
@@ -190,12 +121,12 @@
 
     <div class="hero-section">
         <h1>SMKA Tok Bachok</h1>
-        <p style="opacity: 0.8; font-size: 14px;">Sistem Maklumat Hafazan Al-Quran (Digital)</p>
+        <p style="opacity: 0.8; font-size: 14px;">Portal Semakan Rekod Hafazan Pelajar</p>
     </div>
 
     <div class="container">
         <div class="input-group">
-            <label>NO. KAD PENGENALAN PELAJAR</label>
+            <label>NOMBOR KAD PENGENALAN (TANPA -)</label>
             <input type="text" id="ic_input" placeholder="Contoh: 090101035566" maxlength="12">
         </div>
         <button class="btn-check" onclick="cariData()">Semak Prestasi</button>
@@ -204,23 +135,27 @@
 
         <div id="result_box" class="result-card">
             <div class="result-header">
+                <p style="margin:0; font-size: 12px; font-weight: bold; color: #555;">SLIP PENCAPAIAN HAFAZAN DIGITAL</p>
                 <h2 id="res_nama"></h2>
             </div>
             <table class="data-table">
                 <tr><td class="label-col">Kelas</td><td class="val-col" id="res_kelas"></td></tr>
                 <tr><td class="label-col">Guru Halaqah</td><td class="val-col" id="res_guru"></td></tr>
-                <tr><td class="label-col">Muka Surat</td><td class="val-col" id="res_ms"></td></tr>
+                <tr><td class="label-col">Muka Surat Terkini</td><td class="val-col" id="res_ms"></td></tr>
                 <tr><td class="label-col">Juzuk</td><td class="val-col" id="res_juzuk"></td></tr>
-                <tr><td class="label-col">Prestasi</td><td class="val-col" id="res_prestasi"></td></tr>
+                <tr><td class="label-col">Tahap Prestasi</td><td class="val-col" id="res_prestasi"></td></tr>
                 <tr><td class="label-col">Sukatan Semasa</td><td class="val-col" id="res_sukatan"></td></tr>
-                <tr><td class="label-col">Ranking Kelas</td><td class="val-col" id="res_ranking"></td></tr>
+                <tr><td class="label-col">Kedudukan (Ranking)</td><td class="val-col" id="res_ranking"></td></tr>
             </table>
+            <div style="padding: 15px; text-align: center; font-size: 10px; color: #888;">
+                Slip ini dijana secara digital pada: <span id="current_date"></span>
+            </div>
+            <button class="btn-print" onclick="window.print()">Cetak / Simpan PDF</button>
         </div>
     </div>
 
-    <div class="footer">
-        &copy; 2026 SMKA TOK BACHOK (SMKATB)<br>
-        Kelantan Darul Naim
+    <div class="footer" style="text-align:center; padding: 20px; font-size: 11px; color: #888;">
+        &copy; 2026 SMKA TOK BACHOK. Semua Hak Terpelihara.
     </div>
 
     <script>
@@ -253,6 +188,11 @@
                     document.getElementById('res_prestasi').innerText = data.prestasi || "-";
                     document.getElementById('res_sukatan').innerText = data.sukatan || "-";
                     document.getElementById('res_ranking').innerText = data.ranking || "-";
+                    
+                    // Letak tarikh hari ini
+                    const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+                    document.getElementById('current_date').innerText = new Date().toLocaleDateString('ms-MY', options);
+
                     resultBox.style.display = 'block';
                 } else {
                     alert("Rekod tidak dijumpai. Sila pastikan No. KP adalah betul.");
