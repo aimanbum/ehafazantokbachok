@@ -1,182 +1,176 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ms">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>PORTAL SEMAKAN PRESTASI HAFAZAN SMKA TOK BACHOK</title>
-<link rel="icon" href="logo.png"/>
-<link rel="stylesheet" href="styles.css"/>
-</head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Hafazan | SMKA Tok Bachok</title>
+    <style>
+        :root {
+            --primary-color: #006400; /* Hijau SMKA */
+            --secondary-color: #FFD700; /* Kuning Emas */
+            --bg-color: #f0f4f3;
+        }
 
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            align-items: center;
+        }
+
+        .header {
+            width: 100%;
+            background: var(--primary-color);
+            color: white;
+            padding: 30px 0;
+            text-align: center;
+            border-bottom: 6px solid var(--secondary-color);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .container {
+            width: 90%;
+            max-width: 500px;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-top: -40px;
+            text-align: center;
+        }
+
+        h2 { color: var(--primary-color); margin-bottom: 10px; }
+        p.subtitle { color: #666; font-size: 14px; margin-bottom: 25px; }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 2px solid #eee;
+            border-radius: 12px;
+            font-size: 16px;
+            box-sizing: border-box;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input[type="text"]:focus { border-color: var(--primary-color); }
+
+        button {
+            width: 100%;
+            background: var(--primary-color);
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover { background: #004d00; transform: translateY(-2px); }
+
+        /* Card Keputusan */
+        .result-card {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 15px;
+            background: #f9fdf9;
+            border: 1px solid #e0eee0;
+            text-align: left;
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .result-card h3 { color: var(--primary-color); margin-top: 0; border-bottom: 2px solid var(--secondary-color); padding-bottom: 5px; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; border-bottom: 1px solid #f0f0f0; padding-bottom: 5px; }
+        .info-label { font-weight: bold; color: #555; }
+        
+        .loading { display: none; margin: 20px 0; color: var(--primary-color); font-weight: bold; }
+
+        .footer { margin-top: auto; padding: 30px; color: #888; font-size: 12px; text-align: center; }
+    </style>
+</head>
 <body>
 
-<!-- HEADER WEB -->
-<div class="topbar no-print">
-  <div class="container nav">
-    <div class="brand">
-      <img src="logo.png" class="logo" alt="Logo SMKA Tok Bachok">
-      <div class="site-title">
-        PORTAL SEMAKAN PRESTASI HAFAZAN SMKA TOK BACHOK
-      </div>
+    <div class="header">
+        <h1 style="margin:0; letter-spacing: 2px;">SMKA TOK BACHOK</h1>
+        <p style="margin:5px 0 0 0; opacity: 0.9;">Sistem Semakan Hafazan Digital</p>
     </div>
 
-    <button class="btn pdf-btn" onclick="window.print()" style="display:none">
-      Muat Turun PDF
-    </button>
-  </div>
-</div>
+    <div class="container">
+        <h2>Semakan Ibu Bapa</h2>
+        <p class="subtitle">Sila masukkan No. Kad Pengenalan anak tanpa tanda (-)</p>
+        
+        <input type="text" id="ic_input" placeholder="Contoh: 090101035566" maxlength="12">
+        <button onclick="cariData()">SEMAK PRESTASI</button>
 
-<!-- HEADER CETAK RASMI -->
-<div class="print-header">
-  <div class="kpm-header">
-    <div class="kpm-logo">
-      <img src="logo.png" alt="Logo SMKA Tok Bachok">
+        <div id="loading" class="loading">Sila tunggu, sedang mengambil data...</div>
+
+        <div id="result_box" class="result-card">
+            <h3 id="res_nama"></h3>
+            
+            <div class="info-row"><span class="info-label">Kelas:</span> <span id="res_kelas"></span></div>
+            <div class="info-row"><span class="info-label">Guru Halaqah:</span> <span id="res_guru"></span></div>
+            <div class="info-row"><span class="info-label">Muka Surat:</span> <span id="res_ms"></span></div>
+            <div class="info-row"><span class="info-label">Juzuk:</span> <span id="res_juzuk"></span></div>
+            <div class="info-row"><span class="info-label">Status:</span> <span id="res_status"></span></div>
+            <div class="info-row" style="border:none;"><span class="info-label">Tarikh Kemaskini:</span> <span id="res_tarikh"></span></div>
+        </div>
     </div>
 
-    <div class="kpm-title">
-      <div class="kpm-school">
-        SEKOLAH MENENGAH KEBANGSAAN AGAMA TOK BACHOK
-      </div>
-      <div class="kpm-portal">
-        PORTAL SEMAKAN PRESTASI HAFAZAN
-      </div>
-      <div class="kpm-sub">
-        SMKA TOK BACHOK
-      </div>
+    <div class="footer">
+        &copy; 2026 SMKA Tok Bachok. Semua Hak Terpelihara.
     </div>
 
-    <div class="kpm-date">
-      Tarikh:<br>
-      <span id="printDate"></span>
-    </div>
-  </div>
-  <hr class="kpm-line">
-</div>
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbwMbEkgHcw6p5SXPB7ZvrLUCjyFfcfF-_FZ6Q6jdqCkS5ZztEN-VIhfS1PR6K9mCbwn/exec";
 
-<main class="container">
+        async function cariData() {
+            const ic = document.getElementById('ic_input').value.trim();
+            const resultBox = document.getElementById('result_box');
+            const loading = document.getElementById('loading');
 
-<!-- LOGIN -->
-<section id="login" class="no-print">
-  <div class="card">
-    <strong>Masukkan No IC Pelajar</strong><br>
-    <span class="small">Tanpa sengkang. Contoh: 100318030457</span><br><br>
-    <input id="ic" class="input" placeholder="No IC Pelajar">
-    <button class="btn" onclick="doLogin()">Semak</button>
-    <div id="msg" class="small"></div>
-  </div>
-</section>
+            if (ic === "" || ic.length < 12) {
+                alert("Sila masukkan 12 digit No. Kad Pengenalan yang betul.");
+                return;
+            }
 
-<!-- DATA -->
-<section id="view" style="display:none">
+            // Reset paparan
+            resultBox.style.display = 'none';
+            loading.style.display = 'block';
 
-  <div class="cards">
-    <div class="card"><div class="small">Nama Pelajar</div><div id="v_nama"></div></div>
-    <div class="card"><div class="small">Kelas</div><div id="v_kelas"></div></div>
-    <div class="card"><div class="small">Guru Halaqah</div><div id="v_guru"></div></div>
-    <div class="card"><div class="small">Ranking</div><div id="v_rank"></div></div>
-  </div>
+            try {
+                const response = await fetch(`${API_URL}?ic=${ic}`);
+                const data = await response.json();
 
-  <div class="table">
-    <table>
-      <thead>
-        <tr>
-          <th class="center">Muka Surat</th>
-          <th class="center">Juzuk</th>
-          <th class="center">Sukatan Semasa</th>
-          <th class="center">Prestasi</th>
-        </tr>
-      </thead>
-      <tbody id="rows"></tbody>
-    </table>
-  </div>
+                loading.style.display = 'none';
 
-</section>
+                if (data) {
+                    document.getElementById('res_nama').innerText = data.nama;
+                    document.getElementById('res_kelas').innerText = data.kelas;
+                    document.getElementById('res_guru').innerText = data.guru;
+                    document.getElementById('res_ms').innerText = data.muka_surat || "-";
+                    document.getElementById('res_juzuk').innerText = data.juzuk || "-";
+                    document.getElementById('res_status').innerText = data.status || "-";
+                    document.getElementById('res_tarikh').innerText = data.tarikh || "-";
 
-<!-- TANDATANGAN -->
-<div class="print-signature">
-  <div class="sign-box">
-    <div class="sign-line"></div>
-    Guru Halaqah
-  </div>
-
-  <div class="sign-box">
-    <img src="sign-pengetua.png" class="sign-img">
-  </div>
-</div>
-
-</main>
-
-<footer class="footer">
-  © 2026 SMKA Tok Bachok
-</footer>
-
-<script>
-// ===== CSV T1–T5 (LIVE) =====
-const CSV_LIST = [
- "https://docs.google.com/spreadsheets/d/e/2PACX-1vQd8KR9lDaJaaU5Ba_m-AtrsSxFXJXdPHzjGCbN8rH0dcwbRp1lQ5GaoNHI_cQpKejriavr2Ycj9-h9/pub?gid=864006815&output=csv",
- "https://docs.google.com/spreadsheets/d/e/2PACX-1vQd8KR9lDaJaaU5Ba_m-AtrsSxFXJXdPHzjGCbN8rH0dcwbRp1lQ5GaoNHI_cQpKejriavr2Ycj9-h9/pub?gid=0&output=csv",
- "https://docs.google.com/spreadsheets/d/e/2PACX-1vQd8KR9lDaJaaU5Ba_m-AtrsSxFXJXdPHzjGCbN8rH0dcwbRp1lQ5GaoNHI_cQpKejriavr2Ycj9-h9/pub?gid=1239159275&output=csv",
- "https://docs.google.com/spreadsheets/d/e/2PACX-1vQd8KR9lDaJaaU5Ba_m-AtrsSxFXJXdPHzjGCbN8rH0dcwbRp1lQ5GaoNHI_cQpKejriavr2Ycj9-h9/pub?gid=619009113&output=csv",
- "https://docs.google.com/spreadsheets/d/e/2PACX-1vQd8KR9lDaJaaU5Ba_m-AtrsSxFXJXdPHzjGCbN8rH0dcwbRp1lQ5GaoNHI_cQpKejriavr2Ycj9-h9/pub?gid=1591484628&output=csv"
-];
-
-let data = [];
-
-CSV_LIST.forEach(url=>{
- fetch(url).then(r=>r.text()).then(t=>{
-  const lines = t.split(/\r?\n/);
-  const head = lines[0].split(",");
-  const idx = k => head.indexOf(k);
-
-  for(let i=1;i<lines.length;i++){
-    const c = lines[i].split(",");
-    if(c.length < head.length) continue;
-
-    data.push({
-      ic:(c[idx("NO IC")]||"").replace(/\D/g,""),
-      nama:c[idx("NAMA PELAJAR")],
-      kelas:c[idx("KELAS")],
-      guru:c[idx("GURU HALAQAH")],
-      muka:c[idx("MUKA SURAT")],
-      juzuk:c[idx("JUZUK")],
-      sukatan:c[idx("SUKATAN SEMASA")],
-      prestasi:c[idx("INDIKATOR")],
-      ranking:c[idx("RANKING")]
-    });
-  }
- });
-});
-
-function doLogin(){
-  const ic = document.getElementById("ic").value.replace(/\D/g,"");
-  const r = data.find(x=>x.ic===ic);
-  if(!r){
-    document.getElementById("msg").textContent="No IC tidak ditemui.";
-    return;
-  }
-
-  document.getElementById("login").style.display="none";
-  document.getElementById("view").style.display="block";
-
-  document.getElementById("v_nama").textContent=r.nama||"-";
-  document.getElementById("v_kelas").textContent=r.kelas||"-";
-  document.getElementById("v_guru").textContent=r.guru||"-";
-  document.getElementById("v_rank").textContent=r.ranking||"-";
-
-  document.getElementById("rows").innerHTML =
-    "<tr>"+
-    "<td class='center'>"+(r.muka||"-")+"</td>"+
-    "<td class='center'>"+(r.juzuk||"-")+"</td>"+
-    "<td class='center'>"+(r.sukatan||"-")+"</td>"+
-    "<td class='center'>"+(r.prestasi||"-")+"</td>"+
-    "</tr>";
-
-  document.querySelector(".pdf-btn").style.display="inline-block";
-}
-
-document.getElementById("printDate").textContent =
-  new Date().toLocaleDateString("ms-MY");
-</script>
-
+                    resultBox.style.display = 'block';
+                } else {
+                    alert("Maaf, rekod tidak dijumpai. Sila pastikan No. KP adalah tepat.");
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                alert("Ralat teknikal berlaku. Sila cuba sebentar lagi.");
+                console.error(error);
+            }
+        }
+    </script>
 </body>
 </html>
