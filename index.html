@@ -82,15 +82,15 @@
 
         /* --- Ruangan Tandatangan Terkini --- */
         .signature-section {
-            display: none; /* Sembunyi di web */
-            margin-top: 50px;
-            padding: 0 30px 30px 30px;
+            display: none; 
+            margin-top: 60px; /* Jarak lebih untuk tandatangan besar */
+            padding: 0 30px 40px 30px;
             justify-content: space-between;
             align-items: flex-end;
         }
 
         .sig-box {
-            width: 40%;
+            width: 42%;
             text-align: center;
             position: relative;
         }
@@ -105,20 +105,20 @@
         }
 
         .pengetua-img {
-            width: 110px;
+            width: 160px; /* Saiz dibesarkan daripada 110px ke 160px */
             position: absolute;
-            bottom: 20px;
+            bottom: 15px; /* Disesuaikan semula */
             left: 50%;
             transform: translateX(-50%);
             z-index: 1;
         }
 
         .cop-sekolah {
-            width: 70px;
-            opacity: 0.15; /* Nampak macam cop pudar sedikit */
+            width: 85px;
+            opacity: 0.15;
             position: absolute;
-            bottom: 10px;
-            left: 20px;
+            bottom: 5px;
+            left: 10px;
             z-index: 0;
         }
 
@@ -142,12 +142,12 @@
             body, html { background: #fff !important; background-image: none !important; }
             .navbar, .hero-section, .input-group, .btn-check, .btn-print, .footer, .loading-spinner { display: none !important; }
             .container { box-shadow: none !important; margin: 0 !important; padding: 0 !important; max-width: 100% !important; width: 100% !important; }
-            .result-card { display: block !important; border: 2px solid #000 !important; margin: 10px auto !important; width: 95% !important; border-radius: 0 !important; }
-            .result-header::before { content: ""; display: block; height: 90px; background-image: url('logo.png'); background-repeat: no-repeat; background-position: center; background-size: contain; margin-bottom: 15px; }
-            .result-header { background: #fff !important; border-bottom: 2px solid #000 !important; }
-            .result-header h2 { color: #000 !important; font-size: 22px !important; }
-            .data-table td { border-bottom: 1px solid #999 !important; padding: 15px 25px !important; font-size: 15px !important; }
-            .signature-section { display: flex !important; }
+            .result-card { display: block !important; border: 2.5px solid #000 !important; margin: 5px auto !important; width: 95% !important; border-radius: 0 !important; }
+            .result-header::before { content: ""; display: block; height: 100px; background-image: url('logo.png'); background-repeat: no-repeat; background-position: center; background-size: contain; margin-bottom: 15px; }
+            .result-header { background: #fff !important; border-bottom: 2.5px solid #000 !important; }
+            .result-header h2 { color: #000 !important; font-size: 24px !important; }
+            .data-table td { border-bottom: 1px solid #666 !important; padding: 15px 25px !important; font-size: 16px !important; }
+            .signature-section { display: flex !important; margin-top: 80px !important; }
         }
     </style>
 </head>
@@ -159,7 +159,7 @@
 
     <div class="hero-section">
         <h1>SMKA Tok Bachok</h1>
-        <p style="opacity: 0.8; font-size: 14px;">Portal Semakan Prestasi Hafazan Pelajar</p>
+        <p style="opacity: 0.8; font-size: 14px;">Portal Semakan Rekod Prestasi Hafazan Pelajar</p>
     </div>
 
     <div class="container">
@@ -189,18 +189,18 @@
             <div class="signature-section">
                 <div class="sig-box">
                     <img src="logo.png" alt="Cop Sekolah" class="cop-sekolah">
-                    <div style="height: 60px;"></div>
+                    <div style="height: 70px;"></div>
                     <div class="sig-line">Tandatangan Guru Halaqah</div>
                 </div>
                 <div class="sig-box">
                     <img src="sign-pengetua.png" alt="Sign Pengetua" class="pengetua-img">
-                    <div style="height: 60px;"></div>
+                    <div style="height: 70px;"></div>
                     <div class="sig-line">Pengetua SMKA Tok Bachok</div>
                 </div>
             </div>
 
-            <div style="padding: 15px; text-align: center; font-size: 10px; color: #888; border-top: 1px dashed #eee;">
-                Slip ini dijana secara digital pada: <span id="current_date"></span>
+            <div style="padding: 15px; text-align: center; font-size: 11px; color: #555; border-top: 1px dashed #ccc;">
+                Slip ini dijana secara digital pada: <span id="current_date" style="font-weight:bold;"></span>
             </div>
             <button class="btn-print" onclick="window.print()">Cetak / Simpan PDF</button>
         </div>
