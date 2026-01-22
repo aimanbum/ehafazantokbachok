@@ -80,17 +80,47 @@
         .label-col { color: #666; font-weight: 600; width: 45%; text-align: left; }
         .val-col { text-align: right; font-weight: 700; color: #000; }
 
-        /* Ruangan Tandatangan (Disembunyikan di Web, muncul di Print) */
+        /* --- Ruangan Tandatangan Terkini --- */
         .signature-section {
-            display: none;
-            margin-top: 30px;
-            padding: 0 20px 20px 20px;
+            display: none; /* Sembunyi di web */
+            margin-top: 50px;
+            padding: 0 30px 30px 30px;
             justify-content: space-between;
-            text-align: center;
+            align-items: flex-end;
         }
-        .sig-box { width: 45%; }
-        .sig-line { margin-top: 50px; border-top: 1px solid #000; padding-top: 5px; font-weight: bold; font-size: 12px; }
-        .pengetua-img { height: 60px; display: block; margin: 0 auto -40px auto; }
+
+        .sig-box {
+            width: 40%;
+            text-align: center;
+            position: relative;
+        }
+
+        .sig-line {
+            border-top: 1.5px solid #333;
+            margin-top: 10px;
+            padding-top: 5px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .pengetua-img {
+            width: 110px;
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1;
+        }
+
+        .cop-sekolah {
+            width: 70px;
+            opacity: 0.15; /* Nampak macam cop pudar sedikit */
+            position: absolute;
+            bottom: 10px;
+            left: 20px;
+            z-index: 0;
+        }
 
         .btn-print {
             width: 100%; background: #555; color: white; padding: 12px; margin-top: 15px;
@@ -107,17 +137,17 @@
 
         .footer { text-align:center; padding: 20px; font-size: 11px; color: #888; }
 
-        /* --- KOD CETAKAN (PRINT) --- */
+        /* --- TETAPAN CETAKAN A4 --- */
         @media print {
             body, html { background: #fff !important; background-image: none !important; }
             .navbar, .hero-section, .input-group, .btn-check, .btn-print, .footer, .loading-spinner { display: none !important; }
             .container { box-shadow: none !important; margin: 0 !important; padding: 0 !important; max-width: 100% !important; width: 100% !important; }
-            .result-card { display: block !important; border: 2px solid #000 !important; margin: 20px auto !important; width: 95% !important; }
-            .result-header::before { content: ""; display: block; height: 80px; background-image: url('logo.png'); background-repeat: no-repeat; background-position: center; background-size: contain; margin-bottom: 10px; }
+            .result-card { display: block !important; border: 2px solid #000 !important; margin: 10px auto !important; width: 95% !important; border-radius: 0 !important; }
+            .result-header::before { content: ""; display: block; height: 90px; background-image: url('logo.png'); background-repeat: no-repeat; background-position: center; background-size: contain; margin-bottom: 15px; }
             .result-header { background: #fff !important; border-bottom: 2px solid #000 !important; }
-            .result-header h2 { color: #000 !important; }
-            .data-table td { border-bottom: 1px solid #ccc !important; }
-            .signature-section { display: flex !important; } /* Tunjukkan ruangan sign masa print */
+            .result-header h2 { color: #000 !important; font-size: 22px !important; }
+            .data-table td { border-bottom: 1px solid #999 !important; padding: 15px 25px !important; font-size: 15px !important; }
+            .signature-section { display: flex !important; }
         }
     </style>
 </head>
@@ -129,7 +159,7 @@
 
     <div class="hero-section">
         <h1>SMKA Tok Bachok</h1>
-        <p style="opacity: 0.8; font-size: 14px;">Portal Semakan Prestasi Hafazan</p>
+        <p style="opacity: 0.8; font-size: 14px;">Portal Semakan Prestasi Hafazan Pelajar</p>
     </div>
 
     <div class="container">
@@ -158,15 +188,18 @@
 
             <div class="signature-section">
                 <div class="sig-box">
+                    <img src="logo.png" alt="Cop Sekolah" class="cop-sekolah">
+                    <div style="height: 60px;"></div>
                     <div class="sig-line">Tandatangan Guru Halaqah</div>
                 </div>
                 <div class="sig-box">
                     <img src="sign-pengetua.png" alt="Sign Pengetua" class="pengetua-img">
+                    <div style="height: 60px;"></div>
                     <div class="sig-line">Pengetua SMKA Tok Bachok</div>
                 </div>
             </div>
 
-            <div style="padding: 15px; text-align: center; font-size: 10px; color: #888;">
+            <div style="padding: 15px; text-align: center; font-size: 10px; color: #888; border-top: 1px dashed #eee;">
                 Slip ini dijana secara digital pada: <span id="current_date"></span>
             </div>
             <button class="btn-print" onclick="window.print()">Cetak / Simpan PDF</button>
@@ -174,7 +207,7 @@
     </div>
 
     <div class="footer">
-        &copy; 2026 SMKA TOK BACHOK. Semua Hak Terpelihara.
+        &copy; 2026 SMKA TOK BACHOK (SMKATB). Semua Hak Terpelihara.
     </div>
 
     <script>
