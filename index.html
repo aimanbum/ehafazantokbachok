@@ -80,6 +80,18 @@
         .label-col { color: #666; font-weight: 600; width: 45%; text-align: left; }
         .val-col { text-align: right; font-weight: 700; color: #000; }
 
+        /* Ruangan Tandatangan (Disembunyikan di Web, muncul di Print) */
+        .signature-section {
+            display: none;
+            margin-top: 30px;
+            padding: 0 20px 20px 20px;
+            justify-content: space-between;
+            text-align: center;
+        }
+        .sig-box { width: 45%; }
+        .sig-line { margin-top: 50px; border-top: 1px solid #000; padding-top: 5px; font-weight: bold; font-size: 12px; }
+        .pengetua-img { height: 60px; display: block; margin: 0 auto -40px auto; }
+
         .btn-print {
             width: 100%; background: #555; color: white; padding: 12px; margin-top: 15px;
             border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
@@ -95,44 +107,17 @@
 
         .footer { text-align:center; padding: 20px; font-size: 11px; color: #888; }
 
-        /* --- KOD CETAKAN (PRINT) TERKINI --- */
+        /* --- KOD CETAKAN (PRINT) --- */
         @media print {
-            /* Sembunyikan semua kecuali result-card */
-            body, html { background: #fff !important; background-image: none !important; margin: 0; padding: 0; }
+            body, html { background: #fff !important; background-image: none !important; }
             .navbar, .hero-section, .input-group, .btn-check, .btn-print, .footer, .loading-spinner { display: none !important; }
-            
-            .container { 
-                box-shadow: none !important; 
-                margin: 0 !important; 
-                padding: 0 !important; 
-                max-width: 100% !important;
-                width: 100% !important;
-            }
-
-            .result-card { 
-                display: block !important; 
-                border: 2px solid #000 !important; 
-                margin: 20px auto !important; 
-                width: 90% !important; /* Supaya ada margin kertas kiri kanan */
-                border-radius: 10px !important;
-            }
-
-            /* Tambah Logo Sekolah masa print */
-            .result-header::before {
-                content: "";
-                display: block;
-                height: 80px;
-                background-image: url('logo.png');
-                background-repeat: no-repeat;
-                background-position: center;
-                background-size: contain;
-                margin-bottom: 10px;
-            }
-
+            .container { box-shadow: none !important; margin: 0 !important; padding: 0 !important; max-width: 100% !important; width: 100% !important; }
+            .result-card { display: block !important; border: 2px solid #000 !important; margin: 20px auto !important; width: 95% !important; }
+            .result-header::before { content: ""; display: block; height: 80px; background-image: url('logo.png'); background-repeat: no-repeat; background-position: center; background-size: contain; margin-bottom: 10px; }
             .result-header { background: #fff !important; border-bottom: 2px solid #000 !important; }
-            .result-header h2 { color: #000 !important; font-size: 20px !important; }
-            .data-table td { border-bottom: 1px solid #ccc !important; padding: 15px !important; }
-            .val-col { color: #000 !important; }
+            .result-header h2 { color: #000 !important; }
+            .data-table td { border-bottom: 1px solid #ccc !important; }
+            .signature-section { display: flex !important; } /* Tunjukkan ruangan sign masa print */
         }
     </style>
 </head>
@@ -170,6 +155,17 @@
                 <tr><td class="label-col">Sukatan Semasa</td><td class="val-col" id="res_sukatan"></td></tr>
                 <tr><td class="label-col">Kedudukan (Ranking)</td><td class="val-col" id="res_ranking"></td></tr>
             </table>
+
+            <div class="signature-section">
+                <div class="sig-box">
+                    <div class="sig-line">Tandatangan Guru Halaqah</div>
+                </div>
+                <div class="sig-box">
+                    <img src="sign-pengetua.png" alt="Sign Pengetua" class="pengetua-img">
+                    <div class="sig-line">Pengetua SMKA Tok Bachok</div>
+                </div>
+            </div>
+
             <div style="padding: 15px; text-align: center; font-size: 10px; color: #888;">
                 Slip ini dijana secara digital pada: <span id="current_date"></span>
             </div>
