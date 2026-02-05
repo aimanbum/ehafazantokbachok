@@ -49,6 +49,10 @@
         select:focus, input:focus { border-color: var(--primary); outline: none; }
         select:disabled, input:disabled { background: #f9f9f9; color: #aaa; }
 
+        /* Style khas untuk input skip supaya nampak beza sikit */
+        #skip { border-color: #ffcccc; background-color: #fff5f5; }
+        #skip:focus { border-color: #ff4d4d; }
+
         button { 
             width: 100%; 
             padding: 15px; 
@@ -68,7 +72,6 @@
         button:disabled { background: #ccc; cursor: not-allowed; box-shadow: none; }
 
         .loading-text { font-size: 12px; color: #888; text-align: center; margin-top: 5px; display: none; font-style: italic; }
-        
         .footer { text-align: center; margin-top: 20px; font-size: 11px; color: #aaa; }
     </style>
 </head>
@@ -105,13 +108,16 @@
     <label>MUKA SURAT TERKINI</label>
     <input type="number" id="ms" placeholder="Contoh: 25" inputmode="numeric">
 
+    <label style="color: #d9534f;">JUMLAH M/S SKIP (Jika ada)</label>
+    <input type="number" id="skip" placeholder="Biarkan kosong jika tiada" inputmode="numeric">
+
     <button id="btnHantar" onclick="hantarData()">KEMASKINI DATA</button>
     
-    <div class="footer">Sistem Input Digital v2.0</div>
+    <div class="footer">Sistem Input Digital v2.1</div>
 </div>
 
 <script>
-    // 1. URL Apps Script (Telah dikemaskini dengan link tuan)
+    // URL APPS SCRIPT (Pastikan sama dengan link terbaru tuan)
     const API_URLS = {
         "T1": "https://script.google.com/macros/s/AKfycbww_w5zsGTEkYJBqTX2Y3p0v67h5_qreMo4joQMMRDjjHvbaI7J7soJ04FpeWv80n3tFw/exec",
         "T2": "https://script.google.com/macros/s/AKfycbxbugU8J1yn4mN6OOjUs6sAcRMw8zv8gvUoVagVFEgXdTkrOcRyAs2B7QCxlmmI6MZZiQ/exec",
@@ -120,7 +126,6 @@
         "T5": "https://script.google.com/macros/s/AKfycbxPNKSLYGY9y7FMc32--ZXtj361S9_sMLuKT2VCszhuYfQObRHhW3eAFOWA9v9RHifU/exec"
     };
 
-    // 2. Senarai Nama Guru (Lengkap T1 - T5)
     const DATA_GURU = {
         "T5": ["HANIF", "RUZAIMY", "AMILIN", "AIMAN", "FARIS", "HUSAINI", "AQUAM", "AMILY", "BADRIAH", "MUNIRAH", "MAISITAH", "TOHIRAH", "NAIMAH", "ASIAH", "KHADIJAH"],
         "T4": ["YUSHRAF", "HISHAMBUDIN", "SOLLEH", "HAYYI", "MUHAIMIN", "SYED", "AMALINA", "AMAANYNA", "HAMIZA", "NASIBAH", "ASMA ZULYANI", "ASHMA", "HUFAIDAH", "AINI", "FAIZAH"],
@@ -162,7 +167,6 @@
         selPelajar.disabled = true;
         loader.style.display = 'block';
 
-        // Panggil API (doGet) untuk tarik nama
         const url = API_URLS[tkt] + "?sheetName=" + encodeURIComponent(sheetName);
 
         try {
@@ -196,10 +200,16 @@
         const guru = document.getElementById("guru").value;
         const nama = document.getElementById("namaPelajar").value;
         const ms = document.getElementById("ms").value;
+        const skip = document.getElementById("skip").value; // Ambil nilai skip
         const btn = document.getElementById("btnHantar");
 
-        if (!tkt || !guru || !nama || !ms) {
-            alert("Sila lengkapkan semua maklumat!");
+        if (!tkt || !guru || !nama) {
+            alert("Sila pilih Tingkatan, Guru dan Nama Pelajar!");
+            return;
+        }
+        
+        if (!ms && !skip) {
+            alert("Sila masukkan Muka Surat ATAU Skip (salah satu mesti ada)!");
             return;
         }
 
@@ -211,16 +221,17 @@
         formData.append("sheetName", guru);
         formData.append("nama", nama);
         formData.append("ms", ms);
+        formData.append("skip", skip); // Hantar data skip ke Apps Script
 
         try {
-            // Panggil API (doPost) untuk hantar data
             const response = await fetch(API_URLS[tkt], { method: "POST", body: formData });
             const result = await response.text();
 
             if (result.includes("Berjaya")) {
                 alert("✅ ALHAMDULILLAH! Data berjaya dikemaskini.");
+                // Reset input supaya guru boleh isi orang lain terus
                 document.getElementById("ms").value = ""; 
-                // Reset dropdown nama supaya boleh isi pelajar seterusnya terus
+                document.getElementById("skip").value = ""; 
                 document.getElementById("namaPelajar").value = "";
             } else {
                 alert("❌ Ralat: " + result);
