@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Input Guru | SMKA Tok Bachok</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #004d00; --accent: #D4AF37; --bg: #f4f7f6; }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: var(--bg); 
+            margin: 0; 
+            padding: 20px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh;
+        }
+
+        .container { 
+            background: white; 
+            width: 100%; 
+            max-width: 420px; 
+            padding: 30px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08); 
+        }
+
+        .header { text-align: center; margin-bottom: 25px; }
+        .header img { height: 60px; margin-bottom: 10px; }
+        .header h2 { margin: 0; color: var(--primary); font-size: 20px; }
+        .header p { margin: 5px 0 0; color: #666; font-size: 13px; }
+
+        label { font-weight: 600; font-size: 13px; color: #444; margin-top: 15px; display: block; margin-bottom: 5px; }
+        
+        select, input { 
+            width: 100%; 
+            padding: 12px 15px; 
+            border: 1px solid #ddd; 
+            border-radius: 10px; 
+            font-size: 15px; 
+            background: #fff;
+            box-sizing: border-box;
+            transition: all 0.3s;
+        }
+
+        select:focus, input:focus { border-color: var(--primary); outline: none; }
+        select:disabled, input:disabled { background: #f9f9f9; color: #aaa; }
+
+        button { 
+            width: 100%; 
+            padding: 15px; 
+            margin-top: 25px; 
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            border-radius: 10px; 
+            font-weight: 700; 
+            font-size: 15px; 
+            cursor: pointer; 
+            box-shadow: 0 4px 10px rgba(0,77,0,0.2);
+            transition: 0.2s;
+        }
+
+        button:active { transform: scale(0.98); }
+        button:disabled { background: #ccc; cursor: not-allowed; box-shadow: none; }
+
+        .loading-text { font-size: 12px; color: #888; text-align: center; margin-top: 5px; display: none; font-style: italic; }
+        
+        .footer { text-align: center; margin-top: 20px; font-size: 11px; color: #aaa; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <img src="logo.png" alt="Logo" onerror="this.style.display='none'">
+        <h2>Input Hafazan Guru</h2>
+        <p>SMKA Tok Bachok</p>
+    </div>
+    
+    <label>PILIH TINGKATAN</label>
+    <select id="tingkatan" onchange="loadSenaraiGuru()">
+        <option value="">-- Sila Pilih --</option>
+        <option value="T1">Tingkatan 1</option>
+        <option value="T2">Tingkatan 2</option>
+        <option value="T3">Tingkatan 3</option>
+        <option value="T4">Tingkatan 4</option>
+        <option value="T5">Tingkatan 5</option>
+    </select>
+
+    <label>NAMA GURU (TAB)</label>
+    <select id="guru" onchange="loadNamaPelajar()" disabled>
+        <option value="">-- Pilih Tingkatan Dahulu --</option>
+    </select>
+
+    <label>NAMA PELAJAR</label>
+    <div id="loader" class="loading-text">Sedang mencari data pelajar...</div>
+    <select id="namaPelajar" disabled>
+        <option value="">-- Pilih Guru Dahulu --</option>
+    </select>
+
+    <label>MUKA SURAT TERKINI</label>
+    <input type="number" id="ms" placeholder="Contoh: 25" inputmode="numeric">
+
+    <button id="btnHantar" onclick="hantarData()">KEMASKINI DATA</button>
+    
+    <div class="footer">Sistem Input Digital v2.0</div>
+</div>
+
+<script>
+    // 1. URL Apps Script (Telah dikemaskini dengan link tuan)
+    const API_URLS = {
+        "T1": "https://script.google.com/macros/s/AKfycbww_w5zsGTEkYJBqTX2Y3p0v67h5_qreMo4joQMMRDjjHvbaI7J7soJ04FpeWv80n3tFw/exec",
+        "T2": "https://script.google.com/macros/s/AKfycbxbugU8J1yn4mN6OOjUs6sAcRMw8zv8gvUoVagVFEgXdTkrOcRyAs2B7QCxlmmI6MZZiQ/exec",
+        "T3": "https://script.google.com/macros/s/AKfycbyfBNjbaTuujn37B_0Al8QoE_rOc2Dy9hkDZwiluJO9XhFvv4G5Ukp3DTrTzJfJhhX3/exec",
+        "T4": "https://script.google.com/macros/s/AKfycbxv0KXgRBsN7a8Aj6EBqSbDq_fi-_pIceCwXxMl6VxRGWdTlCN81skM-ynxXyw_uZs/exec",
+        "T5": "https://script.google.com/macros/s/AKfycbxPNKSLYGY9y7FMc32--ZXtj361S9_sMLuKT2VCszhuYfQObRHhW3eAFOWA9v9RHifU/exec"
+    };
+
+    // 2. Senarai Nama Guru (Lengkap T1 - T5)
+    const DATA_GURU = {
+        "T5": ["HANIF", "RUZAIMY", "AMILIN", "AIMAN", "FARIS", "HUSAINI", "AQUAM", "AMILY", "BADRIAH", "MUNIRAH", "MAISITAH", "TOHIRAH", "NAIMAH", "ASIAH", "KHADIJAH"],
+        "T4": ["YUSHRAF", "HISHAMBUDIN", "SOLLEH", "HAYYI", "MUHAIMIN", "SYED", "AMALINA", "AMAANYNA", "HAMIZA", "NASIBAH", "ASMA ZULYANI", "ASHMA", "HUFAIDAH", "AINI", "FAIZAH"],
+        "T3": ["HAFSAH", "AYUB", "HIDAYAH MY", "MUNZIR", "MUHAMMAD", "MUBARAK", "ZAKRI SHAM", "MURSYIDAH", "ISMAIL", "IQBAL", "UMMU", "NASIR", "TARIQ"],
+        "T2": ["HAMIDI", "IZAANUDDIN", "HIDAYAH ABDULLAH", "NAJMUDDIN", "IZATI", "WAN AESAH", "FARID", "AKMAL", "AIN ASMAH", "ZAHARAH", "SHAKIRAH", "IZUAN", "SYAIBANI", "AB AZIZ", "BALQIS"],
+        "T1": ["AZID", "ASMA HUSIN", "FADHILAH", "SHAMRI", "RABIATUL", "FATHANAH", "HIDAYAT", "NIK MUHAMMAD", "THUAIBAH", "AEISYAH", "MARZUQI", "FAROUQ", "NOOR LAILA", "AIMUNI", "AIDIL"]
+    };
+
+    function loadSenaraiGuru() {
+        const tkt = document.getElementById("tingkatan").value;
+        const selGuru = document.getElementById("guru");
+        const selPelajar = document.getElementById("namaPelajar");
+        
+        selGuru.innerHTML = '<option value="">-- Sila Pilih --</option>';
+        selPelajar.innerHTML = '<option value="">-- Pilih Guru Dahulu --</option>';
+        selPelajar.disabled = true;
+        
+        if (tkt && DATA_GURU[tkt]) {
+            selGuru.disabled = false;
+            DATA_GURU[tkt].forEach(g => {
+                let opt = document.createElement("option");
+                opt.value = g;
+                opt.text = g;
+                selGuru.add(opt);
+            });
+        } else {
+            selGuru.disabled = true;
+        }
+    }
+
+    async function loadNamaPelajar() {
+        const tkt = document.getElementById("tingkatan").value;
+        const sheetName = document.getElementById("guru").value;
+        const selPelajar = document.getElementById("namaPelajar");
+        const loader = document.getElementById("loader");
+
+        if (!tkt || !sheetName) return;
+
+        selPelajar.disabled = true;
+        loader.style.display = 'block';
+
+        // Panggil API (doGet) untuk tarik nama
+        const url = API_URLS[tkt] + "?sheetName=" + encodeURIComponent(sheetName);
+
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+
+            selPelajar.innerHTML = '<option value="">-- Sila Pilih Nama --</option>';
+            
+            if (Array.isArray(data) && data.length > 0) {
+                data.forEach(nama => {
+                    let opt = document.createElement("option");
+                    opt.value = nama;
+                    opt.text = nama;
+                    selPelajar.add(opt);
+                });
+                selPelajar.disabled = false;
+            } else {
+                selPelajar.innerHTML = '<option>Tiada pelajar dijumpai</option>';
+            }
+
+        } catch (e) {
+            alert("Ralat sambungan. Sila pastikan nama Tab Guru adalah tepat.");
+            selPelajar.innerHTML = '<option>Ralat memuatkan data</option>';
+        } finally {
+            loader.style.display = 'none';
+        }
+    }
+
+    async function hantarData() {
+        const tkt = document.getElementById("tingkatan").value;
+        const guru = document.getElementById("guru").value;
+        const nama = document.getElementById("namaPelajar").value;
+        const ms = document.getElementById("ms").value;
+        const btn = document.getElementById("btnHantar");
+
+        if (!tkt || !guru || !nama || !ms) {
+            alert("Sila lengkapkan semua maklumat!");
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = "SEDANG UPDATE...";
+        btn.style.background = "#555";
+
+        const formData = new FormData();
+        formData.append("sheetName", guru);
+        formData.append("nama", nama);
+        formData.append("ms", ms);
+
+        try {
+            // Panggil API (doPost) untuk hantar data
+            const response = await fetch(API_URLS[tkt], { method: "POST", body: formData });
+            const result = await response.text();
+
+            if (result.includes("Berjaya")) {
+                alert("✅ ALHAMDULILLAH! Data berjaya dikemaskini.");
+                document.getElementById("ms").value = ""; 
+                // Reset dropdown nama supaya boleh isi pelajar seterusnya terus
+                document.getElementById("namaPelajar").value = "";
+            } else {
+                alert("❌ Ralat: " + result);
+            }
+        } catch (e) {
+            alert("❌ Ralat Internet. Sila cuba lagi.");
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "KEMASKINI DATA";
+            btn.style.background = "var(--primary)";
+        }
+    }
+</script>
+
+</body>
+</html>
