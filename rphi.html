@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Input RPHI T5 | SMKA Tok Bachok</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #004d00; --bg: #f4f7f6; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 20px; }
+        
+        .container { 
+            background: white; max-width: 480px; margin: 0 auto; 
+            padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+            border-top: 5px solid var(--primary);
+        }
+
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h2 { margin: 0; color: var(--primary); font-size: 20px; }
+        .header p { margin: 5px 0 0; font-size: 13px; color: #666; }
+
+        label { font-weight: 700; font-size: 13px; color: #444; margin-top: 15px; display: block; }
+        
+        select, input, textarea { 
+            width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; 
+            font-size: 15px; box-sizing: border-box; margin-top: 5px; background: #fff;
+        }
+
+        /* Input Date cantik sikit */
+        input[type="date"] { color: #333; font-family: 'Inter', sans-serif; }
+        
+        button { 
+            width: 100%; padding: 15px; margin-top: 25px; 
+            background: var(--primary); color: white; border: none; 
+            border-radius: 8px; font-weight: bold; font-size: 16px; 
+            cursor: pointer; transition: 0.2s;
+        }
+        button:active { transform: scale(0.98); }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+
+        #loader { text-align: center; color: #666; font-size: 12px; margin-top: 10px; display: none; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <img src="logo.png" style="height: 50px;" onerror="this.style.display='none'">
+        <h2>Input RPHI (Tingkatan 5)</h2>
+        <p>Sistem Rekod Prestasi Harian</p>
+    </div>
+
+    <label>TARIKH (Hari Ini)</label>
+    <input type="date" id="tarikh">
+
+    <label>GURU HALAQAH</label>
+    <select id="guru" onchange="loadPelajar()">
+        <option value="">Sedang memuatkan senarai guru...</option>
+    </select>
+
+    <label>NAMA PELAJAR</label>
+    <select id="pelajar" disabled>
+        <option value="">-- Sila Pilih Guru Dahulu --</option>
+    </select>
+    <div id="loader">Sedang menghubungi fail RPHI guru...</div>
+
+    <hr style="margin: 25px 0; border: 0; border-top: 1px dashed #ccc;">
+
+    <label>TASMIK (Lajur D)</label>
+    <input type="text" id="tasmik" placeholder="Contoh: Juzuk 1 / Surah Al-Mulk">
+
+    <label>MURAJAAH (Lajur E)</label>
+    <input type="text" id="murajaah" placeholder="Contoh: MS 10-15">
+
+    <label>MARKAH / GRED (Lajur F)</label>
+    <select id="markah">
+        <option value="">-- Pilih Gred --</option>
+        <option value="A">A - MUMTAZ</option>
+        <option value="B">B - JAYYID JIDDAN</option>
+        <option value="C">C - JAYYID</option>
+        <option value="D">D - MAQBUL</option>
+        <option value="E">E - RASIB</option>
+        <option value="TH">TH - TIDAK HADIR</option>
+    </select>
+
+    <label>CATATAN (Lajur G)</label>
+    <textarea id="catatan" rows="2" placeholder="Teguran atau nasihat..."></textarea>
+
+    <button id="btnSimpan" onclick="hantarData()">SIMPAN DATA</button>
+</div>
+
+<script>
+    // Link Apps Script RPHI T5 Tuan
+    const API_URL = "https://script.google.com/macros/s/AKfycbytqafyIRgUyWVKyCoS6FAZNTAKxsHtNQu2HnVoMh0LvnGYiQqdvXp4GGfpRbsJKC4z/exec";
+
+    // Set Tarikh Hari Ini
+    document.getElementById('tarikh').valueAsDate = new Date();
+
+    // 1. Mula-mula load senarai guru dari Database T5
+    window.onload = async function() {
+        const selGuru = document.getElementById("guru");
+        try {
+            const response = await fetch(API_URL + "?action=getGuru");
+            const data = await response.json();
+            
+            selGuru.innerHTML = '<option value="">-- Sila Pilih Guru --</option>';
+            data.forEach(g => {
+                let opt = document.createElement("option");
+                opt.value = g; opt.text = g; selGuru.add(opt);
+            });
+        } catch (e) {
+            selGuru.innerHTML = '<option>Gagal memuatkan senarai guru</option>';
+            alert("Ralat: Sila pastikan tab DATA_URL wujud dalam Database T5.");
+        }
+    };
+
+    // 2. Load Pelajar bila Guru dipilih
+    async function loadPelajar() {
+        const guru = document.getElementById("guru").value;
+        const selPelajar = document.getElementById("pelajar");
+        const loader = document.getElementById("loader");
+
+        if (!guru) return;
+        
+        selPelajar.disabled = true;
+        loader.style.display = "block";
+        selPelajar.innerHTML = '<option>Sedang mencari...</option>';
+
+        try {
+            const response = await fetch(API_URL + "?action=getPelajar&guru=" + encodeURIComponent(guru));
+            const data = await response.json();
+            
+            selPelajar.innerHTML = '<option value="">-- Sila Pilih Pelajar --</option>';
+            if (data.length === 0) {
+                 selPelajar.innerHTML = '<option>Tiada pelajar dijumpai</option>';
+            } else {
+                data.forEach(p => {
+                    let opt = document.createElement("option");
+                    opt.value = p; opt.text = p; selPelajar.add(opt);
+                });
+            }
+            selPelajar.disabled = false;
+        } catch (e) {
+            alert("Gagal membuka fail RPHI guru tersebut. Pastikan ID betul.");
+            selPelajar.innerHTML = '<option>Ralat</option>';
+        } finally {
+            loader.style.display = "none";
+        }
+    }
+
+    // 3. Hantar Data
+    async function hantarData() {
+        const guru = document.getElementById("guru").value;
+        const pelajar = document.getElementById("pelajar").value;
+        const tarikh = document.getElementById("tarikh").value;
+        const btn = document.getElementById("btnSimpan");
+
+        if (!guru || !pelajar || !tarikh) { alert("Sila lengkapkan maklumat Guru, Pelajar dan Tarikh."); return; }
+
+        btn.disabled = true;
+        btn.innerText = "SEDANG MENYIMPAN...";
+        btn.style.background = "#555";
+
+        const payload = {
+            action: "harian", // Bagitahu script ini data harian
+            data: {
+                guru: guru,
+                pelajar: pelajar,
+                tarikh: tarikh,
+                tasmik: document.getElementById("tasmik").value,
+                murajaah: document.getElementById("murajaah").value,
+                markah: document.getElementById("markah").value,
+                catatan: document.getElementById("catatan").value
+            }
+        };
+
+        try {
+            const response = await fetch(API_URL, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+            const result = await response.text();
+            
+            if (result.includes("Berjaya")) {
+                alert("✅ ALHAMDULILLAH! " + result);
+                // Reset form kecuali nama guru (senang nak isi orang lain)
+                document.getElementById("tasmik").value = "";
+                document.getElementById("murajaah").value = "";
+                document.getElementById("catatan").value = "";
+                document.getElementById("markah").value = "";
+            } else {
+                alert("❌ Ralat: " + result);
+            }
+        } catch (e) {
+            alert("Ralat sambungan internet.");
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "SIMPAN DATA";
+            btn.style.background = "var(--primary)";
+        }
+    }
+</script>
+
+</body>
+</html>
