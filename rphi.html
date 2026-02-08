@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Input RPHI | SMKATB</title>
+    <title>RPHI | SMKATB</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root { --primary: #004d00; --bg: #f4f7f6; }
@@ -26,7 +26,6 @@
             font-size: 15px; box-sizing: border-box; margin-top: 5px; background: #fff;
         }
 
-        /* Butang Utama */
         button { 
             width: 100%; padding: 15px; margin-top: 25px; 
             background: var(--primary); color: white; border: none; 
@@ -36,26 +35,7 @@
         button:active { transform: scale(0.98); }
         button:disabled { background: #ccc; cursor: not-allowed; }
 
-        /* Style untuk Resit (Disembunyikan mula-mula) */
-        #resit-box { display: none; text-align: left; border: 2px dashed #ccc; padding: 20px; background: #fff; margin-top: 20px; }
-        .resit-item { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        .resit-label { font-weight: bold; color: #555; }
-        .resit-value { font-weight: normal; color: #000; text-align: right; }
-
-        .btn-group { display: flex; gap: 10px; }
-        .btn-print { background: #333; }
-        .btn-new { background: #004d00; }
-
         #loader { text-align: center; color: #666; font-size: 12px; margin-top: 10px; display: none; }
-
-        /* IKLAN: CSS KHAS UNTUK PRINT (Supaya cantik bila tekan Ctrl+P) */
-        @media print {
-            body { background: white; padding: 0; }
-            .container { box-shadow: none; border: none; width: 100%; max-width: 100%; }
-            .no-print { display: none !important; } /* Sembunyikan borang */
-            #resit-box { display: block !important; border: 2px solid #000; } /* Tunjuk resit */
-            button { display: none; } /* Jangan print butang */
-        }
     </style>
 </head>
 <body>
@@ -63,65 +43,43 @@
 <div class="container">
     <div class="header">
         <img src="logo.png" style="height: 50px;" onerror="this.style.display='none'">
-        <h2>Input RPHI Harian</h2>
-        <p>Sistem Rekod Prestasi Harian</p>
+        <h2>REKOD PRESTASI HAFAZAN INDIVIDU </h2>
+        <p>SMKA TOK BACHOK</p>
     </div>
 
-    <div id="form-box" class="no-print">
-        <label>TARIKH (Hari Ini)</label>
-        <input type="date" id="tarikh">
+    <label>TARIKH (Hari Ini)</label>
+    <input type="date" id="tarikh">
 
-        <label>TINGKATAN</label>
-        <select id="tingkatan" onchange="loadGuru()">
-            <option value="">-- Pilih Tingkatan --</option>
-            <option value="T1">Tingkatan 1</option>
-            <option value="T2">Tingkatan 2</option>
-            <option value="T3">Tingkatan 3</option>
-            <option value="T4">Tingkatan 4</option>
-            <option value="T5">Tingkatan 5</option>
-        </select>
+    <label>TINGKATAN</label>
+    <select id="tingkatan" onchange="loadGuru()">
+        <option value="">-- Pilih Tingkatan --</option>
+        <option value="T1">Tingkatan 1</option>
+        <option value="T2">Tingkatan 2</option>
+        <option value="T3">Tingkatan 3</option>
+        <option value="T4">Tingkatan 4</option>
+        <option value="T5">Tingkatan 5</option>
+    </select>
 
-        <label>GURU HALAQAH</label>
-        <select id="guru" onchange="loadPelajar()" disabled>
-            <option value="">-- Pilih Tingkatan Dahulu --</option>
-        </select>
+    <label>GURU HALAQAH</label>
+    <select id="guru" onchange="loadPelajar()" disabled>
+        <option value="">-- Pilih Tingkatan Dahulu --</option>
+    </select>
 
-        <label>NAMA PELAJAR</label>
-        <select id="pelajar" disabled>
-            <option value="">-- Pilih Guru Dahulu --</option>
-        </select>
-        <div id="loader">Sedang mencari data...</div>
+    <label>NAMA PELAJAR</label>
+    <select id="pelajar" disabled>
+        <option value="">-- Pilih Guru Dahulu --</option>
+    </select>
+    <div id="loader">Sedang mencari data...</div>
 
-        <hr style="margin: 25px 0; border: 0; border-top: 1px dashed #ccc;">
+    <hr style="margin: 25px 0; border: 0; border-top: 1px dashed #ccc;">
 
-        <label>TASMIK (Lajur D)</label>
-        <input type="text" id="tasmik" placeholder="Contoh: Juzuk 1 / Surah Al-Mulk">
+    <label>TASMIK (Lajur D)</label>
+    <input type="text" id="tasmik" placeholder="Contoh: 101">
 
-        <label>MURAJAAH (Lajur E)</label>
-        <input type="text" id="murajaah" placeholder="Contoh: MS 10-15">
+    <label>MURAJAAH (Lajur E)</label>
+    <input type="text" id="murajaah" placeholder="Contoh: 523">
 
-        <button id="btnSimpan" onclick="hantarData()">SIMPAN DATA</button>
-    </div>
-
-    <div id="resit-box">
-        <h3 style="text-align:center; margin-top:0;">BUKTI SERAHAN RPHI</h3>
-        <p style="text-align:center; font-size:12px; color:#666;">SMKA TOK BACHOK</p>
-        <hr>
-        <div class="resit-item"><span class="resit-label">Tarikh:</span> <span class="resit-value" id="r-tarikh">-</span></div>
-        <div class="resit-item"><span class="resit-label">Guru:</span> <span class="resit-value" id="r-guru">-</span></div>
-        <div class="resit-item"><span class="resit-label">Pelajar:</span> <span class="resit-value" id="r-pelajar">-</span></div>
-        <hr>
-        <div class="resit-item"><span class="resit-label">Tasmik:</span> <span class="resit-value" id="r-tasmik">-</span></div>
-        <div class="resit-item"><span class="resit-label">Murajaah:</span> <span class="resit-value" id="r-murajaah">-</span></div>
-        <br>
-        <p style="text-align:center; font-size:11px; font-style:italic;">Rekod ini telah berjaya disimpan ke dalam pangkalan data sekolah.</p>
-    </div>
-
-    <div id="action-buttons" class="btn-group no-print" style="display:none;">
-        <button class="btn-print" onclick="window.print()">🖨️ CETAK RESIT</button>
-        <button class="btn-new" onclick="location.reload()">➕ ISI BARU</button>
-    </div>
-
+    <button id="btnSimpan" onclick="hantarData()">SIMPAN DATA</button>
 </div>
 
 <script>
@@ -130,6 +88,7 @@
 
     document.getElementById('tarikh').valueAsDate = new Date();
 
+    // 1. Load Guru Berdasarkan Tingkatan
     async function loadGuru() {
         const tkt = document.getElementById("tingkatan").value;
         const selGuru = document.getElementById("guru");
@@ -147,6 +106,7 @@
         selPelajar.disabled = true;
 
         try {
+            // Hantar parameter 'tingkatan' ke Apps Script
             const response = await fetch(API_URL + "?action=getGuru&tingkatan=" + encodeURIComponent(tkt));
             const data = await response.json();
             
@@ -166,6 +126,7 @@
         }
     }
 
+    // 2. Load Pelajar
     async function loadPelajar() {
         const guru = document.getElementById("guru").value;
         const selPelajar = document.getElementById("pelajar");
@@ -195,12 +156,11 @@
         }
     }
 
+    // 3. Hantar Data (Tanpa Markah/Catatan)
     async function hantarData() {
         const guru = document.getElementById("guru").value;
         const pelajar = document.getElementById("pelajar").value;
         const tarikh = document.getElementById("tarikh").value;
-        const tasmik = document.getElementById("tasmik").value;
-        const murajaah = document.getElementById("murajaah").value;
         const btn = document.getElementById("btnSimpan");
 
         if (!guru || !pelajar || !tarikh) { alert("Sila lengkapkan maklumat."); return; }
@@ -214,8 +174,9 @@
                 guru: guru,
                 pelajar: pelajar,
                 tarikh: tarikh,
-                tasmik: tasmik,
-                murajaah: murajaah
+                tasmik: document.getElementById("tasmik").value,
+                murajaah: document.getElementById("murajaah").value
+                // Markah & Catatan dah dibuang
             }
         };
 
@@ -227,31 +188,18 @@
             const result = await response.text();
             
             if (result.includes("Berjaya")) {
-                // JIKA BERJAYA: SEMBUNYIKAN BORANG, TUNJUK RESIT
-                isiResit(tarikh, guru, pelajar, tasmik, murajaah);
-                document.getElementById("form-box").style.display = "none";
-                document.getElementById("resit-box").style.display = "block";
-                document.getElementById("action-buttons").style.display = "flex";
-                
-                alert("✅ Data Berjaya Disimpan! Sila cetak resit jika perlu.");
+                alert(result);
+                document.getElementById("tasmik").value = "";
+                document.getElementById("murajaah").value = "";
             } else {
                 alert(result);
-                btn.disabled = false;
-                btn.innerText = "SIMPAN DATA";
             }
         } catch (e) {
             alert("Ralat sambungan.");
+        } finally {
             btn.disabled = false;
             btn.innerText = "SIMPAN DATA";
         }
-    }
-
-    function isiResit(tarikh, guru, pelajar, tasmik, murajaah) {
-        document.getElementById("r-tarikh").innerText = tarikh;
-        document.getElementById("r-guru").innerText = guru;
-        document.getElementById("r-pelajar").innerText = pelajar;
-        document.getElementById("r-tasmik").innerText = tasmik || "-";
-        document.getElementById("r-murajaah").innerText = murajaah || "-";
     }
 </script>
 
