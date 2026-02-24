@@ -1,112 +1,189 @@
-// ==========================================
-// 1. FUNGSI SIMPAN DATA (POST)
-// ==========================================
-function doPost(e) {
-  var lock = LockService.getScriptLock();
-  lock.tryLock(10000); 
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Hafazan | SMKA Tok Bachok</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #004d00; --accent: #D4AF37; --bg: #f4f7f6; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
+        .container { background: white; max-width: 600px; margin: 0 auto; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h2 { margin: 0; color: var(--primary); font-size: 20px; }
+        .header p { margin: 5px 0 0; font-size: 13px; color: #666; }
+        .controls { background: #eef2f3; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
+        label { font-weight: 700; font-size: 11px; display: block; margin-bottom: 5px; color: #444; }
+        select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 10px; font-size: 14px; }
+        .student-list { display: none; }
+        .student-card { background: #fff; border: 1px solid #eee; padding: 12px; margin-bottom: 10px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .student-name { font-weight: 700; font-size: 14px; color: #222; margin-bottom: 10px; border-bottom: 1px solid #f9f9f9; padding-bottom: 5px; }
+        .input-row { display: flex; gap: 10px; }
+        .input-group { flex: 1; }
+        .input-group input { width: 100%; padding: 12px 5px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; text-align: center; box-sizing: border-box; font-weight: 600; }
+        .input-group small { display: block; font-size: 10px; color: #888; text-align: center; margin-top: 5px; font-weight: 600; text-transform: uppercase; }
+        .inp-ms { border-color: #cce5ff; background: #f0f8ff; color: #004085; }
+        .inp-skip { border-color: #ffcccc; background: #fff5f5; color: #721c24; }
+        .fab-container { position: fixed; bottom: 20px; left: 0; right: 0; display: flex; justify-content: center; z-index: 100; }
+        .btn-save { background: var(--primary); color: white; padding: 15px 50px; border-radius: 35px; border: none; font-weight: bold; font-size: 16px; box-shadow: 0 8px 20px rgba(0,77,0,0.3); cursor: pointer; display: none; width: 80%; }
+        .btn-save:disabled { background: #ccc; box-shadow: none; }
+        .loading { text-align: center; padding: 30px; color: #666; font-style: italic; display: none; }
+    </style>
+</head>
+<body>
 
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var dataInput = JSON.parse(e.postData.contents); 
-    var sheet = ss.getSheetByName(dataInput.sheetName);
-    
-    // Range C hingga L (Kolum 3 hingga 12)
-    var range = sheet.getRange(3, 3, sheet.getLastRow() - 2, 10); 
-    var values = range.getValues();
-    var updates = dataInput.updates; 
-    
-    var isUpdated = false;
+<div class="container">
+    <div class="header">
+        <h2>Input Hafazan Guru</h2>
+        <p>SMKA Tok Bachok</p>
+    </div>
 
-    for (var i = 0; i < values.length; i++) {
-      var namaSheet = values[i][0].toString().trim(); 
-      for (var j = 0; j < updates.length; j++) {
-        if (updates[j].nama === namaSheet) {
-          // Update Muka Surat (Kolum G = Index 4)
-          if (updates[j].ms !== "") {
-            values[i][4] = updates[j].ms; 
-            isUpdated = true;
-          }
-          // Update Skip (Kolum L = Index 9)
-          if (updates[j].skip !== "") {
-            values[i][9] = updates[j].skip;
-            isUpdated = true;
-          }
+    <div class="controls">
+        <label>TINGKATAN</label>
+        <select id="tingkatan" onchange="loadSenaraiGuru()">
+            <option value="">-- Pilih Tingkatan --</option>
+            <option value="T1">Tingkatan 1</option>
+            <option value="T2">Tingkatan 2</option>
+            <option value="T3">Tingkatan 3</option>
+            <option value="T4">Tingkatan 4</option>
+            <option value="T5">Tingkatan 5</option>
+        </select>
+
+        <label>NAMA GURU</label>
+        <select id="guru" onchange="loadPelajar()" disabled>
+            <option value="">-- Pilih Guru --</option>
+        </select>
+    </div>
+
+    <div id="loader" class="loading">Memuatkan data pelajar...</div>
+    <div id="studentList" class="student-list"></div>
+    <div style="height: 80px;"></div> 
+</div>
+
+<div class="fab-container">
+    <button id="btnSimpan" class="btn-save" onclick="simpanSemua()">SIMPAN SEMUA</button>
+</div>
+
+<script>
+    // MASUKKAN URL WEB APP ANDA DI SINI
+    const API_URLS = {
+        "T1": "https://script.google.com/macros/s/AKfycbyC1Ly_8hLyrVYt6Q6vCX3OqI9ZEMyn_EL9onABzUVHTmkcY-zehVS3DnH8JSvCocm98Q/exec",
+        "T2": "https://script.google.com/macros/s/AKfycbxjCUXDKpc7_iq3Yde0k8LgAhHfRp4A19Bo9ZQ1vcB5AtfxZelVVdViNVpacrNtQlD-QQ/exec",
+        "T3": "https://script.google.com/macros/s/AKfycbz58tr2kJZE0LS8VLx-C2DAy8bQ_4KENOf_8MAI0vCBX_kkCbJVgK85SKV-tu_O_NFy/exec",
+        "T4": "https://script.google.com/macros/s/AKfycbx2AIAxrbVYLtqRwXeFYXz-AkYChPs0tAs49GoHaOo2tt7Wf-48_M6QwDE43DjR7GP_/exec",
+        "T5": "https://script.google.com/macros/s/AKfycbxa1SMkpOXb3OVtbdQUmFreTXc1cBh8AY2mpTgtZus81rZsTLES3a6JkD-IJJfiMqdc/exec"
+    };
+
+    const DATA_GURU = {
+        "T5": ["HANIF", "RUZAIMY", "AMILIN", "AIMAN", "FARIS", "HUSAINI", "AQUAM", "AMILY", "BADRIAH", "MUNIRAH", "MAISITAH", "TOHIRAH", "NAIMAH", "ASIAH", "KHADIJAH"],
+        "T4": ["YUSHRAF", "HISHAMBUDIN", "SOLLEH", "HAYYI", "MUHAIMIN", "SYED", "AMALINA", "AMAANYNA", "HAMIZA", "NASIBAH", "ASMA ZULYANI", "ASHMA", "HUFAIDAH", "AINI", "FAIZAH"],
+        "T3": ["HAFSAH", "AYUB", "HIDAYAH MY", "MUNZIR", "MUHAMMAD", "MUBARAK", "ZAKRI SHAM", "MURSYIDAH", "ISMAIL", "IQBAL", "UMMU", "NASIR", "TARIQ"],
+        "T2": ["HAMIDI", "IZAANUDDIN", "HIDAYAH ABDULLAH", "NAJMUDDIN", "IZATI", "WAN AESAH", "FARID", "AKMAL", "AIN ASMAH", "ZAHARAH", "SHAKIRAH", "IZUAN", "SYAIBANI", "AB AZIZ", "BALQIS"],
+        "T1": ["AZID", "ASMA HUSIN", "FADHILAH", "SHAMRI", "RABIATUL", "FATHANAH", "HIDAYAT", "NIK MUHAMMAD", "THUAIBAH", "AEISYAH", "MARZUQI", "FAROUQ", "NOOR LAILA", "AIMUNI", "AIDIL"]
+    };
+
+    function loadSenaraiGuru() {
+        const tkt = document.getElementById("tingkatan").value;
+        const selGuru = document.getElementById("guru");
+        selGuru.innerHTML = '<option value="">-- Pilih Guru --</option>';
+        selGuru.disabled = true;
+        document.getElementById("studentList").innerHTML = "";
+        document.getElementById("btnSimpan").style.display = "none";
+        if (tkt && DATA_GURU[tkt]) {
+            selGuru.disabled = false;
+            DATA_GURU[tkt].forEach(g => {
+                let opt = document.createElement("option");
+                opt.value = g; opt.text = g; selGuru.add(opt);
+            });
         }
-      }
     }
 
-    if (isUpdated) {
-      range.setValues(values);
-      SpreadsheetApp.flush();
+    async function loadPelajar() {
+        const tkt = document.getElementById("tingkatan").value;
+        const sheetName = document.getElementById("guru").value;
+        const listDiv = document.getElementById("studentList");
+        const loader = document.getElementById("loader");
+        const btnSave = document.getElementById("btnSimpan");
+
+        if (!tkt || !sheetName) return;
+        listDiv.style.display = "none";
+        loader.style.display = "block";
+        btnSave.style.display = "none";
+
+        const url = API_URLS[tkt] + "?sheetName=" + encodeURIComponent(sheetName);
+
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            listDiv.innerHTML = "";
+            if (data.length === 0) {
+                listDiv.innerHTML = "<p style='text-align:center'>Tiada pelajar dijumpai.</p>";
+            } else {
+                data.forEach((pelajar, index) => {
+                    const card = document.createElement("div");
+                    card.className = "student-card";
+                    card.innerHTML = `
+                        <div class="student-name">${index + 1}. ${pelajar.nama}</div>
+                        <div class="input-row">
+                            <div class="input-group">
+                                <input type="number" class="inp-ms" data-nama="${pelajar.nama}" placeholder="${pelajar.ms_semasa || 'M/S'}">
+                                <small>M/Surat Semasa</small>
+                            </div>
+                            <div class="input-group">
+                                <input type="number" class="inp-skip" data-nama-skip="${pelajar.nama}" placeholder="${pelajar.skip_semasa}">
+                                <small>Skip Semasa</small>
+                            </div>
+                        </div>
+                    `;
+                    listDiv.appendChild(card);
+                });
+                listDiv.style.display = "block";
+                btnSave.style.display = "block";
+            }
+        } catch (e) { alert("Ralat: Pastikan anda telah Deploy Apps Script versi terbaru."); }
+        finally { loader.style.display = "none"; }
     }
-    return ContentService.createTextOutput("Berjaya").setMimeType(ContentService.MimeType.TEXT);
-  } catch (err) {
-    return ContentService.createTextOutput("Ralat: " + err.message).setMimeType(ContentService.MimeType.TEXT);
-  } finally {
-    lock.releaseLock();
-  }
-}
 
-// ==========================================
-// 2. FUNGSI AMBIL DATA (GET)
-// ==========================================
-function doGet(e) {
-  var sheetName = e.parameter.sheetName;
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(sheetName);
-  
-  var lastRow = sheet.getLastRow();
-  if (lastRow < 3) return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
-  
-  // Ambil data C3 hingga L (Kolum L adalah data Skip)
-  var data = sheet.getRange("C3:L" + lastRow).getValues();
-  
-  var result = data.filter(r => r[0] && r[0] !== "").map(r => ({
-    nama: r[0],           // Kolum C
-    ms_semasa: r[4] || "", // Kolum G
-    skip_semasa: (r[9] !== undefined && r[9] !== "") ? r[9] : "0" // Kolum L
-  }));
+    async function simpanSemua() {
+        const tkt = document.getElementById("tingkatan").value;
+        const sheetName = document.getElementById("guru").value;
+        const btn = document.getElementById("btnSimpan");
+        const inputsMS = document.querySelectorAll(".inp-ms");
+        const inputsSkip = document.querySelectorAll(".inp-skip");
+        let updates = [];
 
-  return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
-}
-
-// ==========================================
-// 3. MENU TAMBAHAN
-// ==========================================
-function onOpen() {
-  var ui = SpreadsheetApp.getUi();
-  ui.createMenu('Sistem Hafazan')
-      .addItem('Kosongkan M/S Selain 604', 'clearMSExcept604')
-      .addToUi();
-}
-
-function clearMSExcept604() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheets = ss.getSheets();
-  var targetValue = 604;
-  var columnG = 7; 
-
-  var ui = SpreadsheetApp.getUi();
-  var response = ui.alert('Pengesahan', 'Adakah anda pasti ingin MENGOSONGKAN nilai di Lajur G yang bukan 604?', ui.ButtonSet.YES_NO);
-
-  if (response == ui.Button.YES) {
-    sheets.forEach(function(sheet) {
-      var excludedSheets = ["juzuk", "REKOD", "UTAMA"]; 
-      if (excludedSheets.indexOf(sheet.getName()) > -1) return;
-      var lastRow = sheet.getLastRow();
-      if (lastRow < 3) return;
-      var rangeG = sheet.getRange(3, columnG, lastRow - 2, 1);
-      var valuesG = rangeG.getValues();
-      var changed = false;
-      for (var i = 0; i < valuesG.length; i++) {
-        var val = valuesG[i][0];
-        if (val !== "" && val != targetValue) {
-          valuesG[i][0] = ""; 
-          changed = true;
+        for (let i = 0; i < inputsMS.length; i++) {
+            let nama = inputsMS[i].getAttribute("data-nama");
+            let valMS = inputsMS[i].value;
+            let valSkip = inputsSkip[i].value;
+            if (valMS !== "" || valSkip !== "") {
+                updates.push({ nama: nama, ms: valMS, skip: valSkip });
+            }
         }
-      }
-      if (changed) { rangeG.setValues(valuesG); }
-    });
-    ui.alert('Selesai!');
-  }
-}
+
+        if (updates.length === 0) {
+            alert("Sila isi sekurang-kurangnya satu data.");
+            return;
+        }
+
+        if (!confirm("Simpan data untuk " + updates.length + " pelajar?")) return;
+
+        btn.disabled = true;
+        btn.innerText = "MENYIMPAN...";
+
+        try {
+            const response = await fetch(API_URLS[tkt], {
+                method: "POST",
+                body: JSON.stringify({ sheetName: sheetName, updates: updates })
+            });
+            const result = await response.text();
+            if (result.includes("Berjaya")) {
+                alert("✅ Data telah dikemaskini!");
+                loadPelajar(); // Auto-refresh data
+            } else { alert("❌ Ralat: " + result); }
+        } catch (e) { alert("❌ Sambungan gagal."); }
+        finally { btn.disabled = false; btn.innerText = "SIMPAN SEMUA"; }
+    }
+</script>
+</body>
+</html>
