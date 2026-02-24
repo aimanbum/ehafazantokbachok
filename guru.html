@@ -7,55 +7,25 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root { --primary: #004d00; --accent: #D4AF37; --bg: #f4f7f6; }
-        
         body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 20px; }
-
-        .container { 
-            background: white; max-width: 600px; margin: 0 auto; 
-            padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
-        }
-
+        .container { background: white; max-width: 600px; margin: 0 auto; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .header { text-align: center; margin-bottom: 20px; }
         .header h2 { margin: 0; color: var(--primary); }
         .header p { margin: 5px 0 0; font-size: 13px; color: #666; }
-
         .controls { background: #eef2f3; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
         label { font-weight: 700; font-size: 12px; display: block; margin-bottom: 5px; }
         select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 10px; }
-
-        /* Student List Styling */
         .student-list { display: none; }
-        .student-card { 
-            background: #fff; border: 1px solid #eee; padding: 15px; 
-            margin-bottom: 10px; border-radius: 8px; display: flex; 
-            flex-direction: column; box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-        }
+        .student-card { background: #fff; border: 1px solid #eee; padding: 15px; margin-bottom: 10px; border-radius: 8px; display: flex; flex-direction: column; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
         .student-name { font-weight: 700; font-size: 15px; color: #333; margin-bottom: 8px; }
         .input-row { display: flex; gap: 10px; }
-        
         .input-group { flex: 1; }
-        .input-group input { 
-            width: 100%; padding: 10px; border: 1px solid #ddd; 
-            border-radius: 6px; font-size: 16px; text-align: center; box-sizing: border-box;
-        }
+        .input-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; text-align: center; box-sizing: border-box; }
         .input-group small { display: block; font-size: 10px; color: #888; text-align: center; margin-top: 3px; }
-
-        /* Input specific colors */
         .inp-ms { border-color: #cce5ff; background: #f0f8ff; }
         .inp-skip { border-color: #ffcccc; background: #fff5f5; }
-
-        /* Floating Save Button */
-        .fab-container {
-            position: fixed; bottom: 20px; left: 0; right: 0; 
-            display: flex; justify-content: center; z-index: 100;
-        }
-        .btn-save {
-            background: var(--primary); color: white; padding: 15px 40px; 
-            border-radius: 30px; border: none; font-weight: bold; font-size: 16px;
-            box-shadow: 0 5px 15px rgba(0,77,0,0.3); cursor: pointer; display: none;
-        }
-        .btn-save:disabled { background: #888; }
-        
+        .fab-container { position: fixed; bottom: 20px; left: 0; right: 0; display: flex; justify-content: center; z-index: 100; }
+        .btn-save { background: var(--primary); color: white; padding: 15px 40px; border-radius: 30px; border: none; font-weight: bold; font-size: 16px; box-shadow: 0 5px 15px rgba(0,77,0,0.3); cursor: pointer; display: none; }
         .loading { text-align: center; padding: 20px; color: #666; font-style: italic; display: none; }
     </style>
 </head>
@@ -86,18 +56,15 @@
     </div>
 
     <div id="loader" class="loading">Sedang memuatkan senarai pelajar...</div>
-
-    <div id="studentList" class="student-list">
-        </div>
-    
-    <div style="height: 60px;"></div> </div>
+    <div id="studentList" class="student-list"></div>
+    <div style="height: 60px;"></div> 
+</div>
 
 <div class="fab-container">
     <button id="btnSimpan" class="btn-save" onclick="simpanSemua()">SIMPAN KEMASKINI</button>
 </div>
 
 <script>
-    // URL Apps Script (PASTIKAN ANDA SUDAH DEPLOY VERSION BARU)
     const API_URLS = {
         "T1": "https://script.google.com/macros/s/AKfycbyC1Ly_8hLyrVYt6Q6vCX3OqI9ZEMyn_EL9onABzUVHTmkcY-zehVS3DnH8JSvCocm98Q/exec",
         "T2": "https://script.google.com/macros/s/AKfycbxjCUXDKpc7_iq3Yde0k8LgAhHfRp4A19Bo9ZQ1vcB5AtfxZelVVdViNVpacrNtQlD-QQ/exec",
@@ -117,19 +84,15 @@
     function loadSenaraiGuru() {
         const tkt = document.getElementById("tingkatan").value;
         const selGuru = document.getElementById("guru");
-        
         selGuru.innerHTML = '<option value="">-- Sila Pilih --</option>';
         selGuru.disabled = true;
         document.getElementById("studentList").innerHTML = "";
         document.getElementById("btnSimpan").style.display = "none";
-        
         if (tkt && DATA_GURU[tkt]) {
             selGuru.disabled = false;
             DATA_GURU[tkt].forEach(g => {
                 let opt = document.createElement("option");
-                opt.value = g;
-                opt.text = g;
-                selGuru.add(opt);
+                opt.value = g; opt.text = g; selGuru.add(opt);
             });
         }
     }
@@ -142,7 +105,6 @@
         const btnSave = document.getElementById("btnSimpan");
 
         if (!tkt || !sheetName) return;
-
         listDiv.style.display = "none";
         loader.style.display = "block";
         btnSave.style.display = "none";
@@ -152,14 +114,11 @@
         try {
             const response = await fetch(url);
             const data = await response.json();
-            
             listDiv.innerHTML = "";
-
             if (data.length === 0) {
                 listDiv.innerHTML = "<p style='text-align:center'>Tiada pelajar dijumpai.</p>";
             } else {
                 data.forEach((pelajar, index) => {
-                    // Buat Kad untuk setiap pelajar
                     const card = document.createElement("div");
                     card.className = "student-card";
                     card.innerHTML = `
@@ -170,7 +129,7 @@
                                 <small>Muka Surat</small>
                             </div>
                             <div class="input-group">
-                                <input type="number" class="inp-skip" data-nama-skip="${pelajar.nama}" placeholder="Skip">
+                                <input type="number" class="inp-skip" data-nama-skip="${pelajar.nama}" placeholder="${pelajar.skip_semasa || 'Skip'}">
                                 <small>Jumlah Skip</small>
                             </div>
                         </div>
@@ -180,81 +139,50 @@
                 listDiv.style.display = "block";
                 btnSave.style.display = "block";
             }
-        } catch (e) {
-            alert("Ralat memuatkan senarai pelajar.");
-        } finally {
-            loader.style.display = "none";
-        }
+        } catch (e) { alert("Ralat memuatkan senarai pelajar."); }
+        finally { loader.style.display = "none"; }
     }
 
     async function simpanSemua() {
         const tkt = document.getElementById("tingkatan").value;
         const sheetName = document.getElementById("guru").value;
         const btn = document.getElementById("btnSimpan");
-        
-        // Kumpul data input
         const inputsMS = document.querySelectorAll(".inp-ms");
         const inputsSkip = document.querySelectorAll(".inp-skip");
         let updates = [];
 
-        // Loop setiap pelajar
         for (let i = 0; i < inputsMS.length; i++) {
             let nama = inputsMS[i].getAttribute("data-nama");
             let valMS = inputsMS[i].value;
             let valSkip = inputsSkip[i].value;
-
-            // Kalau ada isi salah satu, masukkan dalam list update
             if (valMS !== "" || valSkip !== "") {
-                updates.push({
-                    nama: nama,
-                    ms: valMS,
-                    skip: valSkip
-                });
+                updates.push({ nama: nama, ms: valMS, skip: valSkip });
             }
         }
 
         if (updates.length === 0) {
-            alert("Tiada data dimasukkan. Sila isi sekurang-kurangnya satu pelajar.");
+            alert("Tiada data dimasukkan.");
             return;
         }
 
-        if (!confirm("Adakah anda pasti mahu mengemaskini " + updates.length + " orang pelajar?")) return;
+        if (!confirm("Pasti mahu simpan " + updates.length + " rekod?")) return;
 
         btn.disabled = true;
         btn.innerText = "SEDANG DISIMPAN...";
 
-        // Hantar Data Pukal (JSON)
-        const payload = {
-            sheetName: sheetName,
-            updates: updates
-        };
-
         try {
             const response = await fetch(API_URLS[tkt], {
                 method: "POST",
-                body: JSON.stringify(payload) // Hantar sebagai JSON String
+                body: JSON.stringify({ sheetName: sheetName, updates: updates })
             });
-            
             const result = await response.text();
-
             if (result.includes("Berjaya")) {
                 alert("✅ Berjaya disimpan!");
-                // Kosongkan input selepas simpan
-                inputsMS.forEach(el => el.value = "");
-                inputsSkip.forEach(el => el.value = "");
-                // Reload data untuk nampak perubahan (opsyenal)
-                // loadPelajar(); 
-            } else {
-                alert("❌ Ralat: " + result);
-            }
-        } catch (e) {
-            alert("❌ Gagal menyambung ke server.");
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "SIMPAN KEMASKINI";
-        }
+                loadPelajar(); // Reload untuk kemas kini placeholder
+            } else { alert("❌ Ralat: " + result); }
+        } catch (e) { alert("❌ Gagal menyambung ke server."); }
+        finally { btn.disabled = false; btn.innerText = "SIMPAN KEMASKINI"; }
     }
 </script>
-
 </body>
 </html>
