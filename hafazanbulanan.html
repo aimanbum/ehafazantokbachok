@@ -99,29 +99,33 @@ select:disabled{background:#f4f6f8;color:#9aa4b2}
  </div>
 </div>
 
-<iframe id="appsBridge" title="Sambungan Google Sheets" aria-hidden="true" style="display:none"></iframe>
+
 <script>
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxPLNfahuVQMnw2-0PK0l0_LuLkB0BRhY7kUh8OXyn7wr7lGpfpVztEcQAALlx5Kyy8/exec';
-const PARENT_ORIGIN = 'https://aimanbum.github.io';
-const bridge = document.getElementById('appsBridge');
-let bridgeLoaded = false, requestNo = 0, pending = new Map(), currentStudents = [], currentGrade = '', currentTeacher = '';
-bridge.src = APPS_SCRIPT_URL + '?bridge=1';
-bridge.addEventListener('load', () => { bridgeLoaded = true; setStatus('Sambungan Google Sheets tersedia.'); });
-window.addEventListener('message', event => {
-  if (event.source !== bridge.contentWindow) return;
-  const data = event.data || {};
-  if (!data.id || !pending.has(data.id)) return;
-  const task = pending.get(data.id); pending.delete(data.id);
-  if (data.ok) task.resolve(data.result); else task.reject(new Error(data.error || 'Ralat sambungan Google Sheets.'));
-});
+let requestNo = 0, currentStudents = [], currentGrade = '', currentTeacher = '';
 function api(action, args=[]) {
-  return new Promise((resolve,reject)=>{
-    if (!bridgeLoaded) { reject(new Error('Sambungan ke Apps Script belum siap. Muat semula halaman sebentar lagi.')); return; }
-    const id = 'req-' + (++requestNo);
-    pending.set(id,{resolve,reject});
-    bridge.contentWindow.postMessage({id,action,args}, '*');
-    setTimeout(()=>{ if(pending.has(id)){pending.delete(id);reject(new Error('Sambungan mengambil masa terlalu lama. Cuba semula.'));}},30000);
-  });
+ return new Promise((resolve,reject)=>{
+  const params = new URLSearchParams({api:'1', action, callback:'hafazanJsonp_'+(++requestNo)});
+  if (action === 'getTeachers') params.set('grade', args[0] || '');
+  if (action === 'getStudents') { params.set('grade', args[0] || ''); params.set('teacher', args[1] || ''); }
+  if (action === 'saveRecords') {
+   params.set('grade', args[0] || ''); params.set('teacher', args[1] || '');
+   params.set('payload', encodeURIComponent(JSON.stringify(args[2] || [])));
+  }
+  const callbackName = params.get('callback');
+  const script = document.createElement('script');
+  let finished = false;
+  const cleanup = () => { if (finished) return; finished=true; clearTimeout(timer); delete window[callbackName]; script.remove(); };
+  window[callbackName] = result => {
+   cleanup();
+   if (result && result.success) resolve(result.data);
+   else reject(new Error(result && result.error ? result.error : 'Ralat API Google Sheets.'));
+  };
+  script.onerror = () => { cleanup(); reject(new Error('Tidak dapat menghubungi Apps Script. Semak deployment dan akses Web App.')); };
+  const timer = setTimeout(()=>{cleanup();reject(new Error('Sambungan mengambil masa terlalu lama. Cuba muat semula halaman.'));},30000);
+  script.src = APPS_SCRIPT_URL + '?' + params.toString();
+  document.head.appendChild(script);
+ });
 }
 function setStatus(message){ document.getElementById('status').textContent=message; }
 function showModal(title,text,buttons){
