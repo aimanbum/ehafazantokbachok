@@ -43,7 +43,7 @@ select:disabled{background:#f4f6f8;color:#9aa4b2}
 .btn-light{background:#edf1f5;color:#34445a}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .status{margin-top:14px;font-size:13px;color:var(--muted)}
-.footer{text-align:center;font-size:11px;letter-spacing:1px;color:#8994a3;margin:23px 0}
+.monitor-toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.monitor.hidden{display:none}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}.stat{background:#f5f7f9;border:1px solid var(--line);border-radius:12px;padding:13px}.stat strong{display:block;font-size:25px;color:var(--navy)}.monitor-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);font-size:13px}.monitor-row:last-child{border-bottom:0}.monitor-name{font-weight:700}.monitor-meta{font-size:11px;color:var(--muted);margin-top:3px}.pill-done{color:#126346;background:#e4f5ed}.pill-pending{color:#a33b32;background:#fff0ee}.pill-status{font-size:10px;font-weight:800;padding:5px 9px;border-radius:20px;white-space:nowrap}.footer{text-align:center;font-size:11px;letter-spacing:1px;color:#8994a3;margin:23px 0}
 .modal{position:fixed;inset:0;background:#091626a8;display:none;align-items:center;justify-content:center;padding:18px;z-index:5;backdrop-filter:blur(4px)}
 .modal.show{display:flex}
 .modal-card{max-width:390px;width:100%;background:white;border-radius:19px;overflow:hidden;box-shadow:0 24px 70px #0004}
@@ -51,7 +51,7 @@ select:disabled{background:#f4f6f8;color:#9aa4b2}
 .modal-head strong{font-size:17px}
 .modal-body{text-align:center;padding:23px;color:var(--ink);font-size:14px;line-height:1.5}
 .modal-actions{display:flex;justify-content:center;gap:10px;padding:0 20px 20px}
-@media(max-width:640px){.wrap{margin:14px auto;padding:0 11px 30px}.hero{padding:20px 17px;border-radius:18px}.brand{gap:13px}.logo{width:78px;height:78px}.panel{padding:17px}.grid,.fields{grid-template-columns:1fr}.panel-head{display:block}}
+@media(max-width:640px){.stats{grid-template-columns:repeat(3,1fr)}.stat{padding:10px}.stat strong{font-size:21px}.wrap{margin:14px auto;padding:0 11px 30px}.hero{padding:20px 17px;border-radius:18px}.brand{gap:13px}.logo{width:78px;height:78px}.panel{padding:17px}.grid,.fields{grid-template-columns:1fr}.panel-head{display:block}}
 </style>
 </head>
 <body>
@@ -202,6 +202,48 @@ async function saveRecords(){
  }catch(e){showModal('PENGHANTARAN GAGAL',e.message,[{label:'TUTUP',cls:'btn-primary'}]);setStatus(e.message);}
  finally{btn.disabled=false;btn.textContent='SIMPAN SEMUA REKOD';}
 }
+
+let monitoringData=null;
+async function toggleMonitoring(){
+ const panel=document.getElementById('monitorContent');
+ const opening=panel.classList.contains('hidden');
+ panel.classList.toggle('hidden');
+ document.getElementById('monitorBtn').textContent=opening?'TUTUP PEMANTAUAN':'BUKA PEMANTAUAN';
+ if(opening) await loadMonitoring();
+}
+async function loadMonitoring(){
+ const status=document.getElementById('monitorStatusText');status.textContent='Sedang memuatkan status pengisian…';
+ try{
+  monitoringData=await api('getMonitoring',[]);
+  document.getElementById('monitorDone').textContent=monitoringData.done;
+  document.getElementById('monitorPending').textContent=monitoringData.pending;
+  document.getElementById('monitorTotal').textContent=monitoringData.total;
+  document.getElementById('monitorMonth').textContent='Bulan pemantauan: '+monitoringData.month;
+  renderMonitoring();status.textContent='Status pemantauan berjaya dikemas kini.';
+ }catch(e){status.textContent='Gagal memuatkan pemantauan: '+e.message;}
+}
+function renderMonitoring(){
+ if(!monitoringData)return;
+ const grade=document.getElementById('monitorGrade').value;
+ const filter=document.getElementById('monitorStatus').value;
+ const rows=monitoringData.rows.filter(r=>(grade==='ALL'||r.grade===grade)&&(filter==='all'||(filter==='done'?r.submitted:!r.submitted)));
+ const box=document.getElementById('monitorList');
+ if(!rows.length){box.innerHTML='<p class="sub" style="padding:16px 0">Tiada guru dalam kategori ini.</p>';return;}
+ box.innerHTML=rows.map(r=>'<div class="monitor-row"><div><div class="monitor-name">'+escapeHtml(r.teacher)+'</div><div class="monitor-meta">'+r.grade+(r.submitted&&r.time?' · Dihantar '+escapeHtml(r.time):'')+'</div></div><span class="pill-status '+(r.submitted?'pill-done':'pill-pending')+'">'+(r.submitted?'SUDAH ISI':'BELUM ISI')+'</span></div>').join('');
+}
+function copyPendingWhatsApp(){
+ if(!monitoringData)return;
+ const grade=document.getElementById('monitorGrade').value;
+ const pending=monitoringData.rows.filter(r=>!r.submitted&&(grade==='ALL'||r.grade===grade));
+ if(!pending.length){showModal('TIADA GURU TERTUNGGAK','Semua guru bagi pilihan ini telah menghantar rekod.',[{label:'TUTUP',cls:'btn-primary'}]);return;}
+ const lines=pending.map((r,i)=>(i+1)+'. '+r.teacher+' ('+r.grade+')');
+ const msg='PERINGATAN PENGISIAN PRESTASI HAFAZAN BULANAN – '+monitoringData.month+'\n\nMohon perhatian guru-guru berikut yang masih belum melengkapkan pengisian:\n\n'+lines.join('\n')+'\n\nMohon kerjasama untuk melengkapkan pengisian dengan kadar segera. Terima kasih.';
+ if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(msg).then(()=>showModal('BERJAYA DISALIN',pending.length+' nama guru telah disalin. Anda boleh paste terus ke WhatsApp Group.',[{label:'SELESAI',cls:'btn-primary'}])).catch(()=>fallbackCopy(msg));}
+ else fallbackCopy(msg);
+}
+function fallbackCopy(text){const area=document.createElement('textarea');area.value=text;document.body.appendChild(area);area.select();try{document.execCommand('copy');showModal('BERJAYA DISALIN','Senarai guru telah disalin. Paste terus ke WhatsApp Group.',[{label:'SELESAI',cls:'btn-primary'}]);}catch(e){showModal('GAGAL MENYALIN','Sila cuba semula atau gunakan pelayar lain.',[{label:'TUTUP',cls:'btn-primary'}]);}area.remove();}
+document.getElementById('monitorGrade').addEventListener('change',renderMonitoring);
+document.getElementById('monitorStatus').addEventListener('change',renderMonitoring);
 </script>
 </body>
 </html>
