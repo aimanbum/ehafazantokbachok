@@ -78,15 +78,15 @@ select:disabled{background:#f4f6f8;color:#9aa4b2}
   <div><label for="grade">TINGKATAN</label><select id="grade"><option value="">Pilih tingkatan</option><option>T1</option><option>T2</option><option>T3</option><option>T4</option><option>T5</option></select></div>
   <div><label for="teacher">NAMA GURU HALAQAH</label><select id="teacher" disabled><option>Pilih tingkatan dahulu</option></select></div>
  </div>
- <div class="tip">Pilih tingkatan terlebih dahulu, kemudian pilih nama guru. Senarai murid akan dipaparkan selepas sambungan data diaktifkan.</div>
- <div class="status" id="status">Pratonton reka bentuk baharu — belum disambungkan kepada Google Sheets.</div>
+ <div class="tip">Pilih tingkatan terlebih dahulu, kemudian pilih nama guru. Senarai murid akan dimuatkan terus daripada Google Sheets.</div>
+ <div class="status" id="status">Menyambung ke pangkalan data Google Sheets…</div>
 </section>
 
 <section class="panel students hidden" id="students">
  <div class="panel-head"><div><h2><span class="step">02</span>Rekod Murid Halaqah</h2><p class="sub" id="count">Senarai murid</p></div></div>
  <div id="list"></div>
  <div class="tip">Semua murid wajib dilengkapkan. Isi 0 jika tiada skip. Muka surat 604 dikekalkan sebagai status khatam.</div>
- <div class="actions"><button class="btn btn-primary" onclick="demoSubmit()">SIMPAN SEMUA REKOD</button></div>
+ <div class="actions"><button class="btn btn-primary" id="saveBtn" onclick="submitRecords()">SIMPAN SEMUA REKOD</button></div>
 </section>
 <footer class="footer">PRESTASI HAFAZAN BULANAN · SMKA TOK BACHOK</footer>
 </main>
@@ -99,9 +99,31 @@ select:disabled{background:#f4f6f8;color:#9aa4b2}
  </div>
 </div>
 
+<iframe id="appsBridge" title="Sambungan Google Sheets" aria-hidden="true" style="display:none"></iframe>
 <script>
-// Fail ini ialah pratonton visual. Sambungan sebenar ke Apps Script akan
-// dimasukkan selepas URL Web App API disediakan.
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxPLNfahuVQMnw2-0PK0l0_LuLkB0BRhY7kUh8OXyn7wr7lGpfpVztEcQAALlx5Kyy8/exec';
+const PARENT_ORIGIN = 'https://aimanbum.github.io';
+const bridge = document.getElementById('appsBridge');
+let bridgeLoaded = false, requestNo = 0, pending = new Map(), currentStudents = [], currentGrade = '', currentTeacher = '';
+bridge.src = APPS_SCRIPT_URL + '?bridge=1';
+bridge.addEventListener('load', () => { bridgeLoaded = true; setStatus('Sambungan Google Sheets tersedia.'); });
+window.addEventListener('message', event => {
+  if (event.source !== bridge.contentWindow) return;
+  const data = event.data || {};
+  if (!data.id || !pending.has(data.id)) return;
+  const task = pending.get(data.id); pending.delete(data.id);
+  if (data.ok) task.resolve(data.result); else task.reject(new Error(data.error || 'Ralat sambungan Google Sheets.'));
+});
+function api(action, args=[]) {
+  return new Promise((resolve,reject)=>{
+    if (!bridgeLoaded) { reject(new Error('Sambungan ke Apps Script belum siap. Muat semula halaman sebentar lagi.')); return; }
+    const id = 'req-' + (++requestNo);
+    pending.set(id,{resolve,reject});
+    bridge.contentWindow.postMessage({id,action,args}, '*');
+    setTimeout(()=>{ if(pending.has(id)){pending.delete(id);reject(new Error('Sambungan mengambil masa terlalu lama. Cuba semula.'));}},30000);
+  });
+}
+function setStatus(message){ document.getElementById('status').textContent=message; }
 function showModal(title,text,buttons){
  document.getElementById('modalTitle').textContent=title;
  document.getElementById('modalText').textContent=text;
@@ -109,8 +131,72 @@ function showModal(title,text,buttons){
  buttons.forEach(b=>{const x=document.createElement('button');x.className='btn '+b.cls;x.textContent=b.label;x.onclick=()=>{document.getElementById('modal').classList.remove('show');b.action&&b.action()};box.appendChild(x)});
  document.getElementById('modal').classList.add('show');
 }
-function demoSubmit(){
- showModal('PRATONTON SAHAJA','Sambungan Google Sheets belum diaktifkan. Ini hanya untuk melihat reka bentuk popup.',[{label:'FAHAM',cls:'btn-primary'}]);
+function escapeHtml(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+const gradeSelect=document.getElementById('grade'), teacherSelect=document.getElementById('teacher');
+gradeSelect.addEventListener('change',loadTeachers); teacherSelect.addEventListener('change',loadStudents);
+async function loadTeachers(){
+ currentGrade=gradeSelect.value; currentTeacher=''; currentStudents=[];
+ document.getElementById('students').classList.add('hidden');
+ teacherSelect.disabled=true; teacherSelect.innerHTML='<option value="">Memuatkan nama guru…</option>';
+ if(!currentGrade){teacherSelect.innerHTML='<option value="">Pilih tingkatan dahulu</option>';setStatus('Sila pilih tingkatan.');return;}
+ setStatus('Sedang mendapatkan senarai guru…');
+ try{
+  const names=await api('getTeachers',[currentGrade]);
+  teacherSelect.innerHTML='<option value="">Pilih nama guru</option>'+names.map(n=>'<option value="'+escapeHtml(n)+'">'+escapeHtml(n)+'</option>').join('');
+  teacherSelect.disabled=false; setStatus(names.length+' orang guru ditemui untuk '+currentGrade+'.');
+ }catch(e){teacherSelect.innerHTML='<option value="">Gagal memuatkan guru</option>';setStatus(e.message);}
+}
+async function loadStudents(){
+ currentTeacher=teacherSelect.value; document.getElementById('students').classList.add('hidden');
+ if(!currentTeacher)return;
+ setStatus('Sedang memuatkan senarai murid…');
+ try{
+  currentStudents=await api('getStudents',[currentGrade,currentTeacher]); renderStudents();
+  document.getElementById('students').classList.remove('hidden');
+  document.getElementById('count').textContent=currentStudents.length+' orang murid · '+currentTeacher;
+  setStatus('Senarai murid berjaya dimuatkan.');
+ }catch(e){setStatus(e.message);}
+}
+function renderStudents(){
+ const list=document.getElementById('list'); list.innerHTML='';
+ currentStudents.forEach((s,i)=>{
+  const page=s.khatam?604:(s.page===null||s.page===undefined?'':s.page);
+  const skip=s.skip===null||s.skip===undefined?'':s.skip;
+  const card=document.createElement('div');card.className='student';
+  card.innerHTML='<div class="student-top"><div class="student-name">'+(i+1)+'. '+escapeHtml(s.name)+'</div>'+(s.khatam?'<span class="badge">KHATAM</span>':'')+'</div><div class="fields"><div><label>MUKA SURAT (1–604)</label><input class="page-input" type="number" min="1" max="604" step="1" inputmode="numeric" value="'+page+'" '+(s.khatam?'disabled':'')+' placeholder="Muka surat semasa"></div><div><label>JUMLAH SKIP</label><input class="skip-input" type="number" min="0" step="1" inputmode="numeric" value="'+skip+'" placeholder="Masukkan jumlah skip"></div></div>';
+  card.dataset.row=s.row;list.appendChild(card);
+ });
+}
+function submitRecords(){
+ const cards=[...document.querySelectorAll('#list .student')];
+ if(!cards.length)return;
+ for(const card of cards){
+  const page=card.querySelector('.page-input').value, skip=card.querySelector('.skip-input').value;
+  if((page==='' && !card.querySelector('.page-input').disabled)||skip===''){
+   showModal('MAKLUMAT BELUM LENGKAP','Sila lengkapkan Muka Surat dan Jumlah Skip bagi semua murid. Isi 0 jika tiada skip.',[{label:'SEMAK SEMULA',cls:'btn-primary'}]);return;
+  }
+  if((!card.querySelector('.page-input').disabled && (!Number.isInteger(Number(page))||Number(page)<1||Number(page)>604))||!Number.isInteger(Number(skip))||Number(skip)<0){
+   showModal('NILAI TIDAK SAH','Pastikan Muka Surat antara 1 hingga 604 dan Jumlah Skip ialah nombor bulat 0 atau lebih.',[{label:'SEMAK SEMULA',cls:'btn-primary'}]);return;
+  }
+ }
+ showModal('PENGESAHAN REKOD','Anda akan menghantar rekod '+cards.length+' orang murid bagi '+currentGrade+'. Pastikan semua maklumat betul.',[
+  {label:'BATAL',cls:'btn-light'},
+  {label:'YA, HANTAR',cls:'btn-primary',action:saveRecords}
+ ]);
+}
+async function saveRecords(){
+ const btn=document.getElementById('saveBtn');btn.disabled=true;btn.textContent='SEDANG MENYIMPAN…';setStatus('Sedang menyimpan rekod ke Google Sheets…');
+ const records=[...document.querySelectorAll('#list .student')].map(card=>({
+  row:Number(card.dataset.row),page:card.querySelector('.page-input').disabled?604:card.querySelector('.page-input').value,skip:card.querySelector('.skip-input').value
+ }));
+ try{
+  const result=await api('saveRecords',[currentGrade,currentTeacher,records]);
+  showModal('REKOD BERJAYA DISIMPAN',result.count+' rekod murid telah disimpan ke Google Sheets.',[
+   {label:'SELESAI',cls:'btn-primary',action:()=>{gradeSelect.value='';teacherSelect.innerHTML='<option value="">Pilih tingkatan dahulu</option>';teacherSelect.disabled=true;document.getElementById('students').classList.add('hidden');currentGrade='';currentTeacher='';currentStudents=[];setStatus('Sila pilih tingkatan untuk kemas kini seterusnya.');}}
+  ]);
+  setStatus('Rekod berjaya disimpan.');
+ }catch(e){showModal('PENGHANTARAN GAGAL',e.message,[{label:'TUTUP',cls:'btn-primary'}]);setStatus(e.message);}
+ finally{btn.disabled=false;btn.textContent='SIMPAN SEMUA REKOD';}
 }
 </script>
 </body>
