@@ -103,6 +103,30 @@ select:disabled{background:#f4f6f8;color:#9aa4b2}
 <script>
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxPLNfahuVQMnw2-0PK0l0_LuLkB0BRhY7kUh8OXyn7wr7lGpfpVztEcQAALlx5Kyy8/exec';
 let requestNo = 0, currentStudents = [], currentGrade = '', currentTeacher = '';
+const teacherCache = {};
+const CACHE_TTL = 60 * 60 * 1000; // 1 jam
+const GRADES = ['T1','T2','T3','T4','T5'];
+
+function readTeacherCache(grade) {
+ try {
+  const saved = JSON.parse(localStorage.getItem('hafazan_teachers_'+grade) || 'null');
+  if (saved && Array.isArray(saved.names) && Date.now()-saved.savedAt < CACHE_TTL) return saved.names;
+ } catch(e) {}
+ return null;
+}
+function saveTeacherCache(grade,names) {
+ teacherCache[grade]=names;
+ try { localStorage.setItem('hafazan_teachers_'+grade,JSON.stringify({names,savedAt:Date.now()})); } catch(e) {}
+}
+async function preloadTeacherLists() {
+ // Paparkan cache sedia ada serta-merta, kemudian segarkan senarai di latar belakang.
+ GRADES.forEach(g=>{ const cached=readTeacherCache(g); if(cached) teacherCache[g]=cached; });
+ const jobs=GRADES.map(async g=>{
+  try { const names=await api('getTeachers',[g]); saveTeacherCache(g,names); }
+  catch(e) { /* Cache sedia ada kekal digunakan jika API sementara gagal. */ }
+ });
+ await Promise.allSettled(jobs);
+}
 function api(action, args=[]) {
  return new Promise((resolve,reject)=>{
   const params = new URLSearchParams({api:'1', action, callback:'hafazanJsonp_'+(++requestNo)});
@@ -138,14 +162,24 @@ function showModal(title,text,buttons){
 function escapeHtml(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 const gradeSelect=document.getElementById('grade'), teacherSelect=document.getElementById('teacher');
 gradeSelect.addEventListener('change',loadTeachers); teacherSelect.addEventListener('change',loadStudents);
+preloadTeacherLists();
 async function loadTeachers(){
  currentGrade=gradeSelect.value; currentTeacher=''; currentStudents=[];
  document.getElementById('students').classList.add('hidden');
  teacherSelect.disabled=true; teacherSelect.innerHTML='<option value="">Memuatkan nama guru…</option>';
  if(!currentGrade){teacherSelect.innerHTML='<option value="">Pilih tingkatan dahulu</option>';setStatus('Sila pilih tingkatan.');return;}
+
+ // Cache dipaparkan serta-merta; jika tiada cache, tunggu API untuk tingkatan dipilih.
+ let names=teacherCache[currentGrade] || readTeacherCache(currentGrade);
+ if(names && names.length){
+  teacherSelect.innerHTML='<option value="">Pilih nama guru</option>'+names.map(n=>'<option value="'+escapeHtml(n)+'">'+escapeHtml(n)+'</option>').join('');
+  teacherSelect.disabled=false;
+  setStatus(names.length+' orang guru untuk '+currentGrade+'. Senarai disimpan sementara dan disegarkan di latar belakang.');
+  return;
+ }
  setStatus('Sedang mendapatkan senarai guru…');
  try{
-  const names=await api('getTeachers',[currentGrade]);
+  names=await api('getTeachers',[currentGrade]); saveTeacherCache(currentGrade,names);
   teacherSelect.innerHTML='<option value="">Pilih nama guru</option>'+names.map(n=>'<option value="'+escapeHtml(n)+'">'+escapeHtml(n)+'</option>').join('');
   teacherSelect.disabled=false; setStatus(names.length+' orang guru ditemui untuk '+currentGrade+'.');
  }catch(e){teacherSelect.innerHTML='<option value="">Gagal memuatkan guru</option>';setStatus(e.message);}
@@ -203,47 +237,6 @@ async function saveRecords(){
  finally{btn.disabled=false;btn.textContent='SIMPAN SEMUA REKOD';}
 }
 
-let monitoringData=null;
-async function toggleMonitoring(){
- const panel=document.getElementById('monitorContent');
- const opening=panel.classList.contains('hidden');
- panel.classList.toggle('hidden');
- document.getElementById('monitorBtn').textContent=opening?'TUTUP PEMANTAUAN':'BUKA PEMANTAUAN';
- if(opening) await loadMonitoring();
-}
-async function loadMonitoring(){
- const status=document.getElementById('monitorStatusText');status.textContent='Sedang memuatkan status pengisian…';
- try{
-  monitoringData=await api('getMonitoring',[]);
-  document.getElementById('monitorDone').textContent=monitoringData.done;
-  document.getElementById('monitorPending').textContent=monitoringData.pending;
-  document.getElementById('monitorTotal').textContent=monitoringData.total;
-  document.getElementById('monitorMonth').textContent='Bulan pemantauan: '+monitoringData.month;
-  renderMonitoring();status.textContent='Status pemantauan berjaya dikemas kini.';
- }catch(e){status.textContent='Gagal memuatkan pemantauan: '+e.message;}
-}
-function renderMonitoring(){
- if(!monitoringData)return;
- const grade=document.getElementById('monitorGrade').value;
- const filter=document.getElementById('monitorStatus').value;
- const rows=monitoringData.rows.filter(r=>(grade==='ALL'||r.grade===grade)&&(filter==='all'||(filter==='done'?r.submitted:!r.submitted)));
- const box=document.getElementById('monitorList');
- if(!rows.length){box.innerHTML='<p class="sub" style="padding:16px 0">Tiada guru dalam kategori ini.</p>';return;}
- box.innerHTML=rows.map(r=>'<div class="monitor-row"><div><div class="monitor-name">'+escapeHtml(r.teacher)+'</div><div class="monitor-meta">'+r.grade+(r.submitted&&r.time?' · Dihantar '+escapeHtml(r.time):'')+'</div></div><span class="pill-status '+(r.submitted?'pill-done':'pill-pending')+'">'+(r.submitted?'SUDAH ISI':'BELUM ISI')+'</span></div>').join('');
-}
-function copyPendingWhatsApp(){
- if(!monitoringData)return;
- const grade=document.getElementById('monitorGrade').value;
- const pending=monitoringData.rows.filter(r=>!r.submitted&&(grade==='ALL'||r.grade===grade));
- if(!pending.length){showModal('TIADA GURU TERTUNGGAK','Semua guru bagi pilihan ini telah menghantar rekod.',[{label:'TUTUP',cls:'btn-primary'}]);return;}
- const lines=pending.map((r,i)=>(i+1)+'. '+r.teacher+' ('+r.grade+')');
- const msg='PERINGATAN PENGISIAN PRESTASI HAFAZAN BULANAN – '+monitoringData.month+'\n\nMohon perhatian guru-guru berikut yang masih belum melengkapkan pengisian:\n\n'+lines.join('\n')+'\n\nMohon kerjasama untuk melengkapkan pengisian dengan kadar segera. Terima kasih.';
- if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(msg).then(()=>showModal('BERJAYA DISALIN',pending.length+' nama guru telah disalin. Anda boleh paste terus ke WhatsApp Group.',[{label:'SELESAI',cls:'btn-primary'}])).catch(()=>fallbackCopy(msg));}
- else fallbackCopy(msg);
-}
-function fallbackCopy(text){const area=document.createElement('textarea');area.value=text;document.body.appendChild(area);area.select();try{document.execCommand('copy');showModal('BERJAYA DISALIN','Senarai guru telah disalin. Paste terus ke WhatsApp Group.',[{label:'SELESAI',cls:'btn-primary'}]);}catch(e){showModal('GAGAL MENYALIN','Sila cuba semula atau gunakan pelayar lain.',[{label:'TUTUP',cls:'btn-primary'}]);}area.remove();}
-document.getElementById('monitorGrade').addEventListener('change',renderMonitoring);
-document.getElementById('monitorStatus').addEventListener('change',renderMonitoring);
 </script>
 </body>
 </html>
