@@ -76,7 +76,7 @@ select:disabled{background:#f4f6f8;color:#9aa4b2}
  </div>
  <div class="grid">
   <div><label for="grade">TINGKATAN</label><select id="grade"><option value="">Pilih tingkatan</option><option>T1</option><option>T2</option><option>T3</option><option>T4</option><option>T5</option></select></div>
-  <div><label for="teacher">NAMA GURU HALAQAH</label><select id="teacher" disabled><option>Pilih tingkatan dahulu</option></select><button type="button" class="btn secondary" id="refreshTeachers" style="margin-top:9px;padding:9px 13px;font-size:12px" disabled>↻ Segar semula senarai guru</button></div>
+  <div><label for="teacher">NAMA GURU HALAQAH</label><select id="teacher" disabled><option>Pilih tingkatan dahulu</option></select></div>
  </div>
  <div class="tip">Pilih tingkatan terlebih dahulu, kemudian pilih nama guru. Senarai murid akan dimuatkan terus daripada Google Sheets.</div>
  <div class="status" id="status">Menyambung ke pangkalan data Google Sheets…</div>
@@ -162,9 +162,10 @@ function showModal(title,text,buttons){
 function escapeHtml(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 const gradeSelect=document.getElementById('grade'), teacherSelect=document.getElementById('teacher');
 gradeSelect.addEventListener('change',loadTeachers); teacherSelect.addEventListener('change',loadStudents);
-document.getElementById('refreshTeachers').addEventListener('click',refreshTeacherList);
-gradeSelect.addEventListener('change',()=>{document.getElementById('refreshTeachers').disabled=!gradeSelect.value;});
 preloadTeacherLists();
+// Semak perubahan senarai guru secara senyap tanpa butang tambahan.
+setInterval(refreshAllTeacherListsSilently, 5 * 60 * 1000);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) refreshAllTeacherListsSilently(); });
 async function loadTeachers(){
  currentGrade=gradeSelect.value; currentTeacher=''; currentStudents=[];
  document.getElementById('students').classList.add('hidden');
@@ -186,22 +187,27 @@ async function loadTeachers(){
   teacherSelect.disabled=false; setStatus(names.length+' orang guru ditemui untuk '+currentGrade+'.');
  }catch(e){teacherSelect.innerHTML='<option value="">Gagal memuatkan guru</option>';setStatus(e.message);}
 }
-async function refreshTeacherList(){
- const grade=gradeSelect.value;
- if(!grade)return;
- const button=document.getElementById('refreshTeachers');
- const previous=teacherSelect.value;
- button.disabled=true; button.textContent='Sedang menyegar…';
- setStatus('Mendapatkan senarai guru terkini daripada Google Sheets…');
- try{
-  const names=await api('getTeachers',[grade]);
-  saveTeacherCache(grade,names);
-  teacherSelect.innerHTML='<option value="">Pilih nama guru</option>'+names.map(n=>'<option value="'+escapeHtml(n)+'">'+escapeHtml(n)+'</option>').join('');
-  teacherSelect.disabled=false;
-  if(names.includes(previous)) teacherSelect.value=previous;
-  setStatus('Senarai guru '+grade+' telah dikemas kini daripada Google Sheets ('+names.length+' orang).');
- }catch(e){setStatus('Tidak berjaya menyegar senarai: '+e.message);}
- finally{button.disabled=false;button.textContent='↻ Segar semula senarai guru';}
+async function refreshAllTeacherListsSilently(){
+ // Semak semua tingkatan di latar belakang; cache sedia ada tidak mengganggu paparan.
+ await Promise.allSettled(GRADES.map(async grade=>{
+  try{
+   const names=await api('getTeachers',[grade]);
+   const oldNames=teacherCache[grade] || readTeacherCache(grade) || [];
+   const changed=JSON.stringify(names)!==JSON.stringify(oldNames);
+   saveTeacherCache(grade,names);
+   if(changed && currentGrade===grade){
+    const selected=teacherSelect.value;
+    teacherSelect.innerHTML='<option value="">Pilih nama guru</option>'+names.map(n=>'<option value="'+escapeHtml(n)+'">'+escapeHtml(n)+'</option>').join('');
+    teacherSelect.disabled=false;
+    if(names.includes(selected)) teacherSelect.value=selected;
+    else if(selected){
+     teacherSelect.value=''; currentTeacher=''; currentStudents=[];
+     document.getElementById('students').classList.add('hidden');
+     setStatus('Senarai guru telah dikemas kini. Sila pilih nama guru yang terkini.');
+    }
+   }
+  }catch(e){ /* Kekalkan cache jika sambungan sementara gagal. */ }
+ }));
 }
 async function loadStudents(){
  currentTeacher=teacherSelect.value; document.getElementById('students').classList.add('hidden');
